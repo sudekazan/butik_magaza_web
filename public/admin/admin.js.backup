@@ -1,0 +1,1971 @@
+// Auth guard
+const token = localStorage.getItem('token');
+if (!token) {
+  window.location.href = '/admin/login.html';
+}
+
+// Cropper.js kontrolü ve fallback
+const checkCropperAvailability = () => {
+  // Cropper.js yüklenene kadar bekle
+  if (typeof Cropper === 'undefined') {
+    // 1 saniye bekle ve tekrar kontrol et
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (typeof Cropper !== 'undefined') {
+          resolve(true);
+        } else {
+          console.warn('Cropper.js yüklenemedi! Görsel kırpma özelliği devre dışı.');
+          resolve(false);
+        }
+      }, 1000);
+    });
+  }
+  return Promise.resolve(true);
+};
+
+// Basit kırpma fallback (Cropper.js yoksa)
+const simpleCropFallback = (file, { aspectRatio = 4/3, onDone } = {}) => {
+  const url = URL.createObjectURL(file);
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div class="text-center">
+        <h3 class="text-lg font-semibold mb-4">Görsel Kırpma</h3>
+        <p class="text-sm text-slate-500 mb-4">Cropper.js yüklenemedi. Görsel olduğu gibi kullanılacak.</p>
+        <div class="flex gap-3 justify-center">
+          <button id="cropCancel" class="px-4 py-2 border rounded">Vazgeç</button>
+          <button id="cropSave" class="px-4 py-2 rounded text-white" style="background:linear-gradient(135deg,#CBA135,#E3C77E)">Kullan</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const close = () => { URL.revokeObjectURL(url); modal.remove(); };
+  modal.querySelector('#cropCancel').onclick = close;
+  modal.querySelector('#cropSave').onclick = () => { onDone?.(file); close(); };
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+};
+
+// Token geçerliliğini kontrol et
+const checkTokenValidity = async () => {
+  try {
+    const res = await fetch('/api/health', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.status === 401) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login.html';
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Token kontrol hatası:', error);
+    return false;
+  }
+};
+
+// Sidebar nav
+const navItems = document.querySelectorAll('.tab-btn');
+const sections = {
+  categories: document.getElementById('tab-categories'),
+  products: document.getElementById('tab-products'),
+  settings: document.getElementById('tab-settings')
+};
+navItems.forEach((btn) =>
+  btn.addEventListener('click', () => {
+    navItems.forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    Object.values(sections).forEach((s) => s?.classList.add('hidden'));
+    const targetSection = document.getElementById(`tab-${btn.dataset.tab}`);
+    if (targetSection) targetSection.classList.remove('hidden');
+  })
+);
+
+// Bu elementler HTML'de bulunmadığı için kaldırıldı
+// Topbar profile menu
+// document.getElementById('profileBtn')?.addEventListener('click', () => {
+//   document.getElementById('profileMenu').classList.toggle('hidden');
+// });
+
+// Sidebar toggle (mobile)
+// document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+//   const sidebar = document.getElementById('sidebar');
+//   if (sidebar.classList.contains('hidden')) {
+//     sidebar.classList.remove('hidden');
+//     sidebar.classList.add('absolute', 'z-50', 'h-screen');
+//   } else {
+//     sidebar.classList.add('hidden');
+//     sidebar.classList.remove('absolute', 'z-50', 'h-screen');
+//   }
+// });
+
+document.getElementById('logoutBtn')?.addEventListener('click', () => {
+  localStorage.removeItem('token');
+  window.location.href = '/admin/login.html';
+});
+
+const authFetch = async (url, options = {}) => {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`
+    }
+  });
+  
+  if (res.status === 401) {
+    // Oturum süresi dolmuş
+    alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+    localStorage.removeItem('token');
+    window.location.href = '/admin/login.html';
+    return;
+  }
+  
+  if (!res.ok) throw new Error('İstek başarısız');
+  return res.json().catch(() => ({}));
+};
+
+// Categories - DOM yüklendikten sonra atanacak
+let catForm;
+let catList;
+let prodCatSelect;
+
+// Products
+// Bu değişkenler global olarak tanımlanacak
+
+// Image management elements - DOM yüklendikten sonra atanacak
+let catImageInput;
+let catImagePreview;
+let catDropZone;
+let catImageControls;
+let pickCatImageBtn;
+let removeCatImageBtn;
+let editCatImageBtn;
+let catImageSize;
+let catImageDimensions;
+
+// Product image management elements
+const prodImageInput = document.getElementById('prodImageInput');
+const dropZone = document.getElementById('dropZone');
+const imageControls = document.getElementById('imageControls');
+const pickImageBtn = document.getElementById('pickImageBtn');
+// Çoklu görsel desteği için bu elementler kaldırıldı
+// const imagePreview = document.getElementById('imagePreview');
+// const removeImageBtn = document.getElementById('removeImageBtn');
+// const editImageBtn = document.getElementById('editImageBtn');
+// const cropImageBtn = document.getElementById('cropImageBtn');
+// const imageSize = document.getElementById('imageSize');
+// const imageDimensions = document.getElementById('imageDimensions');
+
+// Global variables
+let editingProductId = null;
+
+// Global erişim için yer tutucular (DOM yüklendikten sonra atanır)
+let addSizeRow;
+let addColorVariant;
+let addVariant; // Yeni varyant sistemi için
+
+// Global değişkenler
+let productImages = [];
+let catCroppedFile = null;
+
+// Drag & Drop utility (tekil ve global)
+const setupDragAndDrop = (targetDropZone, targetInput, afterAssignCallback) => {
+  if (!targetDropZone || !targetInput) return;
+
+  ['dragenter', 'dragover'].forEach((evt) => {
+    targetDropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      targetDropZone.classList.add('ring-2', 'ring-[#CBA135]');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach((evt) => {
+    targetDropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      targetDropZone.classList.remove('ring-2', 'ring-[#CBA135]');
+    });
+  });
+
+  targetDropZone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type?.startsWith('image/')) {
+      targetInput.files = e.dataTransfer.files;
+      if (typeof afterAssignCallback === 'function') {
+        afterAssignCallback({ target: targetInput });
+      }
+    }
+  });
+};
+
+ 
+
+// Image management functions
+const setupImageManagement = () => {
+  // Category image management
+  pickCatImageBtn?.addEventListener('click', () => catImageInput.click());
+  catImageInput?.addEventListener('change', handleCatImageSelect);
+  removeCatImageBtn?.addEventListener('click', removeCatImage);
+  editCatImageBtn?.addEventListener('click', editCatImage);
+  
+  // Product image management
+  pickImageBtn?.addEventListener('click', () => prodImageInput.click());
+  prodImageInput?.addEventListener('click', handleProdImageSelect);
+  // Çoklu görsel desteği için bu event listener'lar kaldırıldı
+  // removeImageBtn?.addEventListener('click', removeProdImage);
+  // editImageBtn?.addEventListener('click', editProdImage);
+  // cropImageBtn?.addEventListener('click', cropProdImage);
+  
+  // Setup drag and drop for main drop zones
+  setupDragAndDrop(dropZone, prodImageInput, (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    // Her dosya için kırpma modalı aç
+    files.forEach((file, index) => {
+      openCropperModal(file, {
+        aspectRatio: getProductCardAspectRatio(),
+        onDone: (blob) => {
+          const croppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+          addProductImage(croppedFile);
+          
+          // Son dosya işlendikten sonra input'u temizle
+          if (index === files.length - 1) {
+            prodImageInput.value = '';
+          }
+        }
+      });
+    });
+  });
+  
+  // Setup drag and drop for category images
+  setupDragAndDrop(catDropZone, catImageInput, (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    openCropperModal(file, {
+      aspectRatio: getCategoryCardAspectRatio(),
+      onDone: (blob) => {
+        const newFile = replaceInputFile(catImageInput, file.name, blob);
+        displayImagePreview(newFile, catImagePreview, catImageControls, catImageSize, catImageDimensions);
+      }
+    });
+  });
+};
+
+let prodCroppedFile = null;
+
+// Kategori seçimi
+const handleCatImageSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const ar = getCategoryCardAspectRatio(); // otomatik oran
+  openCropperModal(file, {
+    aspectRatio: ar,
+    onDone: (blob) => {
+      catCroppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+      replaceInputFile(catImageInput, file.name, blob);
+      displayImagePreview(catCroppedFile, catImagePreview, catImageControls, catImageSize, catImageDimensions);
+    }
+  });
+};
+
+// Ürün seçimi - Çoklu görsel desteği
+const handleProdImageSelect = (event) => {
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
+  
+  // Her dosya için kırpma modalı aç
+  files.forEach((file, index) => {
+    const ar = getProductCardAspectRatio(); // otomatik/fallback oran
+    openCropperModal(file, {
+      aspectRatio: ar,
+      onDone: (blob) => {
+        const croppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+        addProductImage(croppedFile);
+        
+        // Son dosya işlendikten sonra input'u temizle
+        if (index === files.length - 1) {
+          prodImageInput.value = '';
+        }
+      }
+    });
+  });
+};
+
+const displayImagePreview = (file, previewElement, controlsElement, sizeElement, dimensionsElement) => {
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    previewElement.src = e.target.result;
+    previewElement.classList.remove('hidden');
+    controlsElement.classList.remove('hidden');
+    
+    // Display file info
+    sizeElement.textContent = formatFileSize(file.size);
+    
+    const img = new Image();
+    img.onload = () => {
+      dimensionsElement.textContent = `${img.width} x ${img.height}px`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const removeCatImage = () => {
+  catImageInput.value = '';
+  catImagePreview.classList.add('hidden');
+  catImageControls.classList.add('hidden');
+  catImagePreview.src = '';
+  // Kırpılmış görsel dosyasını da temizle
+  catCroppedFile = null;
+};
+
+// Çoklu görsel yönetimi fonksiyonları
+const addProductImage = (file) => {
+  if (!file || !(file instanceof File)) {
+    console.error('Geçersiz dosya:', file);
+    return;
+  }
+  
+  const imageId = Date.now() + Math.random();
+  const imageData = {
+    id: imageId,
+    file: file,
+    name: file.name || 'Görsel',
+    size: file.size || 0,
+    isMain: productImages.length === 0 // İlk eklenen ana görsel
+  };
+  
+  productImages.push(imageData);
+  
+  try {
+    renderProductImages();
+    updateImageControls();
+  } catch (error) {
+    console.error('Görsel render hatası:', error);
+  }
+  
+  // Kullanıcıya bilgi ver
+  console.log(`Görsel eklendi: ${file.name}`);
+};
+
+const removeProductImage = (imageId) => {
+  const index = productImages.findIndex(img => img.id === imageId);
+  if (index > -1) {
+    productImages.splice(index, 1);
+    
+    // Eğer ana görsel silindiyse, ilk görseli ana yap
+    if (productImages.length > 0 && productImages.every(img => !img.isMain)) {
+      productImages[0].isMain = true;
+    }
+    
+    renderProductImages();
+    updateImageControls();
+  }
+};
+
+const setMainImage = (imageId) => {
+  productImages.forEach(img => img.isMain = img.id === imageId);
+  renderProductImages();
+};
+
+const renderProductImages = () => {
+  const container = document.getElementById('productImagesContainer');
+  if (!container) return;
+  
+  if (productImages.length === 0) {
+    container.innerHTML = '<p class="text-sm text-slate-400 text-center">Henüz görsel eklenmedi</p>';
+    return;
+  }
+  
+  // Önce container'ı temizle
+  container.innerHTML = '';
+  
+  // Her görsel için DOM elementi oluştur
+  productImages.forEach(img => {
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'flex items-center gap-3 p-3 border border-slate-200 rounded-lg bg-white';
+    
+    // Görsel URL'ini güvenli şekilde al
+    let imageSrc = '';
+    if (img.file) {
+      imageSrc = URL.createObjectURL(img.file);
+    } else if (img.url) {
+      imageSrc = img.url;
+    } else {
+      imageSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiAyNEMyNy41ODE3IDI0IDI0IDI3LjU4MTcgMjQgMzJDMjQgMzYuNDE4MyAyNy41ODE3IDQwIDMyIDQwQzM2LjQxODMgNDAgNDAgMzYuNDE4MyA0MCAzMkM0MCAyNy41ODE3IDM2LjQxODMgMjQgMzIgMjRaIiBmaWxsPSIjOUI5QkEwIi8+Cjwvc3ZnPgo=';
+    }
+    
+    imageDiv.innerHTML = `
+      <div class="flex-shrink-0">
+        <img src="${imageSrc}" alt="${img.name}" class="w-16 h-16 object-cover rounded-lg" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-slate-800 truncate">${img.name}</p>
+        <p class="text-xs text-slate-500">${img.file ? formatFileSize(img.size) : 'Mevcut görsel'}</p>
+        <div class="flex items-center gap-2 mt-1">
+          <button type="button" class="text-xs px-2 py-1 rounded ${img.isMain ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} main-btn">
+            ${img.isMain ? '✓ Ana Görsel' : 'Ana Yap'}
+          </button>
+          <button type="button" class="text-xs px-2 py-1 rounded bg-rose-100 text-rose-600 hover:bg-rose-200 remove-btn">
+            Kaldır
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // Event listener'ları ekle
+    const mainBtn = imageDiv.querySelector('.main-btn');
+    const removeBtn = imageDiv.querySelector('.remove-btn');
+    
+    if (mainBtn) {
+      mainBtn.addEventListener('click', () => setMainImage(img.id));
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => removeProductImage(img.id));
+    }
+    
+    container.appendChild(imageDiv);
+  });
+};
+
+const updateImageControls = () => {
+  const controls = document.getElementById('imageControls');
+  if (!controls) return;
+  
+  if (productImages.length > 0) {
+    controls.classList.remove('hidden');
+    controls.innerHTML = `
+      <div class="text-xs text-slate-500">
+        <p>Eklenen görsel sayısı: <strong>${productImages.length}</strong></p>
+        <p>Ana görsel: <strong>${productImages.find(img => img.isMain)?.name || 'Belirlenmedi'}</strong></p>
+        <p>Önerilen boyut: 1200x1000px (6:5 oran)</p>
+        <p>İlk eklenen görsel ana görsel olarak kullanılır</p>
+      </div>
+    `;
+  } else {
+    controls.classList.add('hidden');
+  }
+};
+
+const removeProdImage = () => {
+  prodImageInput.value = '';
+  // Çoklu görsel desteği için tüm görselleri temizle
+  productImages = [];
+  renderProductImages();
+  updateImageControls();
+};
+
+const editCatImage = () => {
+  // Open image editor (basic implementation)
+  if (catImageInput.files[0]) {
+    openImageEditor(catImageInput.files[0], (editedImage) => {
+      // Handle edited image
+      console.log('Edited category image:', editedImage);
+    });
+  }
+};
+
+// Bu fonksiyonlar çoklu görsel desteği için kaldırıldı
+// const editProdImage = () => {
+//   // Open image editor (basic implementation)
+//   if (prodImageInput.files[0]) {
+//     openImageEditor(prodImageInput.files[0], (editedImage) => {
+//       // Handle edited image
+//       console.log('Edited product image:', editedImage);
+//     });
+//   }
+// };
+
+// const cropProdImage = () => {
+//   // Open image cropper (basic implementation)
+//   if (prodImageInput.files[0]) {
+//     openImageEditor(prodImageInput.files[0], (croppedImage) => {
+//       // Handle cropped image
+//       console.log('Cropped product image:', croppedImage);
+//     });
+//   }
+// };
+
+// Bu fonksiyonlar çoklu görsel desteği için kaldırıldı
+// const openImageEditor = (file, callback) => {
+//   // Basic image editor implementation
+//   const canvas = document.createElement('canvas');
+//   const ctx = canvas.getContext('2d');
+//   const img = new Image();
+//   
+//   img.onload = () => {
+//     canvas.width = img.width;
+//     canvas.height = img.height;
+//     ctx.drawImage(img, 0, 0);
+//   
+//     // Show editor modal
+//     showImageEditorModal(canvas, callback);
+//   };
+//   
+//   img.src = URL.createObjectURL(file);
+// };
+
+// const openImageCropper = (file, callback) => {
+//   // Basic image cropper implementation
+//   const img = new Image();
+//   img.src = URL.createObjectURL(file);
+// };
+
+// Bu modal fonksiyonları çoklu görsel desteği için kaldırıldı
+// const showImageEditorModal = (canvas, callback) => {
+//   // Basic image editor modal implementation...
+// };
+
+// const showImageCropperModal = (img, callback) => {
+//   // Basic image cropper modal implementation...
+// };
+
+// Bu fonksiyon çoklu görsel desteği için kaldırıldı
+// const updateImageInfo = (imageUrl) => {
+//   const img = new Image();
+//   img.onload = () => {
+//     imageDimensions.textContent = `${img.width} x ${img.height}px`;
+//     // For existing images, we can't get file size, so show dimensions only
+//     imageSize.textContent = 'Mevcut görsel';
+//   };
+//   img.onerror = () => {
+//     imageDimensions.textContent = 'Bilinmiyor';
+//     imageSize.textContent = 'Mevcut görsel';
+//   };
+//   img.src = imageUrl;
+// };
+
+
+
+// Category edit modal functions
+const openCategoryEditModal = async (categoryId) => {
+  try {
+    const response = await fetch(`/api/categories/${categoryId}`);
+    const category = await response.json();
+    
+    if (!response.ok) {
+      alert('Kategori bilgisi yüklenemedi');
+      return;
+    }
+    
+    showCategoryEditModal(category);
+  } catch (error) {
+    console.error('Kategori yüklenirken hata:', error);
+    alert('Kategori bilgisi yüklenemedi');
+  }
+};
+
+const showCategoryEditModal = (category) => {
+  // Create modal HTML
+  const modalHTML = `
+    <div id="catEditModal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Kategori Düzenle</h3>
+          <button id="closeCatEditModal" class="p-2 rounded-lg hover:bg-slate-100" aria-label="Kapat">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="catEditForm" class="space-y-4">
+          <input type="hidden" name="categoryId" value="${category._id}" />
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Kategori Adı</label>
+            <input name="name" value="${category.name}" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Mevcut Görsel</label>
+            <div class="mb-3">
+              <img src="${category.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" 
+                   alt="${category.name}" 
+                   class="w-32 h-20 object-cover rounded-lg border" />
+            </div>
+            <label class="block text-sm text-slate-700 mb-1">Yeni Görsel (Opsiyonel)</label>
+            <div id="catEditDropZone" class="rounded-xl border border-dashed border-slate-300 p-4 text-center hover:border-[#CBA135] transition bg-white">
+              <input id="catEditImageInput" name="newImage" type="file" accept="image/*" class="hidden" />
+              <p class="text-sm text-slate-500">Görseli sürükleyip bırakın veya <button type="button" id="pickCatEditImageBtn" class="text-[#CBA135] underline">dosya seçin</button></p>
+              <img id="catEditImagePreview" class="mt-3 max-h-32 mx-auto rounded-lg hidden" />
+            </div>
+            <div id="catEditImageControls" class="hidden space-y-2 mt-2">
+              <div class="flex items-center gap-2">
+                <button type="button" id="removeCatEditImageBtn" class="px-3 py-1.5 text-sm text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50">Görseli Kaldır</button>
+              </div>
+              <div class="text-xs text-slate-500">
+                <p>Görsel boyutu: <span id="catEditImageSize">-</span></p>
+                <p>Görsel boyutları: <span id="catEditImageDimensions">-</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2 mt-6">
+            <button type="button" id="cancelCatEditBtn" class="px-4 py-2 rounded-xl border">Vazgeç</button>
+            <button type="submit" class="px-5 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">Güncelle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to DOM
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Setup event listeners
+  const modal = document.getElementById('catEditModal');
+  const closeBtn = document.getElementById('closeCatEditModal');
+  const cancelBtn = document.getElementById('cancelCatEditBtn');
+  const form = document.getElementById('catEditForm');
+  const imageInput = document.getElementById('catEditImageInput');
+  const imagePreview = document.getElementById('catEditImagePreview');
+  const imageControls = document.getElementById('catEditImageControls');
+  const pickBtn = document.getElementById('pickCatEditImageBtn');
+  const removeBtn = document.getElementById('removeCatEditImageBtn');
+  const sizeSpan = document.getElementById('catEditImageSize');
+  const dimensionsSpan = document.getElementById('catEditImageDimensions');
+  
+  // Close modal
+  const closeModal = () => {
+    modal.remove();
+  };
+  
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Image handling
+  pickBtn.addEventListener('click', () => imageInput.click());
+  imageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Kategori düzenleme modalında da kırpma modalı aç
+      openCropperModal(file, {
+        aspectRatio: getCategoryCardAspectRatio(),
+        onDone: (blob) => {
+          catCroppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+          replaceInputFile(imageInput, file.name, blob);
+          displayImagePreview(catCroppedFile, imagePreview, imageControls, sizeSpan, dimensionsSpan);
+        }
+      });
+    }
+  });
+  
+  removeBtn.addEventListener('click', () => {
+    imageInput.value = '';
+    imagePreview.classList.add('hidden');
+    imageControls.classList.add('hidden');
+    imagePreview.src = '';
+    // Kırpılmış görsel dosyasını da temizle
+    catCroppedFile = null;
+  });
+  
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const categoryId = formData.get('categoryId');
+    
+    // Kırpılmış görsel dosyasını FormData'ya ekle
+    if (catCroppedFile) {
+      formData.set('newImage', catCroppedFile);
+    }
+    
+    try {
+      const res = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      
+      if (res.status === 401) {
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('token');
+        window.location.href = '/admin/login.html';
+        return;
+      }
+      
+      if (!res.ok) {
+        alert('Kategori güncellenemedi');
+        return;
+      }
+      
+      alert('Kategori başarıyla güncellendi!');
+      closeModal();
+      // Kırpılmış görsel dosyasını temizle
+      catCroppedFile = null;
+      await loadCategories();
+      
+    } catch (error) {
+      console.error('Kategori güncellenirken hata:', error);
+      alert('Kategori güncellenemedi');
+    }
+  });
+  
+  // Setup drag and drop for edit modal
+  const editDropZone = document.getElementById('catEditDropZone');
+  setupDragAndDrop(editDropZone, imageInput, (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Kategori düzenleme modalında da kırpma modalı aç
+      openCropperModal(file, {
+        aspectRatio: getCategoryCardAspectRatio(),
+        onDone: (blob) => {
+          catCroppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+          replaceInputFile(imageInput, file.name, blob);
+          displayImagePreview(catCroppedFile, imagePreview, imageControls, sizeSpan, dimensionsSpan);
+        }
+      });
+    }
+  });
+};
+
+const loadCategories = async () => {
+  try {
+    const res = await fetch('/api/categories');
+    if (res.status === 401) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
+    const cats = await res.json();
+    
+    console.log('Yüklenen kategoriler:', cats);
+    
+    // render select
+    if (prodCatSelect) {
+      prodCatSelect.innerHTML = cats.map((c) => `<option value="${c._id}">${c.name}</option>`).join('');
+    }
+    
+    // render grid cards
+    if (catList) {
+      catList.innerHTML = '';
+      cats.forEach((c) => {
+        const card = document.createElement('div');
+        const img = c.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+        card.className = 'group relative overflow-hidden rounded-xl shadow hover:shadow-lg transition';
+        card.innerHTML = `
+          <div class="aspect-[16/10] overflow-hidden">
+            <img src="${img}" alt="${c.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+              ${c.imageUrl ? 'Özel Görsel' : 'Varsayılan'}
+            </div>
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          <div class="absolute inset-x-0 bottom-0 p-3 flex items-center justify-between">
+            <div class="text-white font-semibold">${c.name}</div>
+            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+              <button title="Düzenle" data-id="${c._id}" class="cat-edit p-2 rounded-full bg-white/90 hover:bg-white shadow">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+              <button title="Sil" data-id="${c._id}" class="cat-del p-2 rounded-full bg-white/90 hover:bg-white shadow">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 7h12v2H6V7zm2 3h8l-1 9H9l-1-9zM9 4h6l1 2H8l1-2z"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+        catList.appendChild(card);
+      });
+
+      // actions
+      catList.querySelectorAll('.cat-del').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          if (!confirm('Silmek istediğinize emin misiniz?')) return;
+          await authFetch(`/api/categories/${btn.dataset.id}`, { method: 'DELETE' });
+          await loadCategories();
+          await loadProducts();
+        })
+      );
+      catList.querySelectorAll('.cat-edit').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          openCategoryEditModal(btn.dataset.id);
+        })
+      );
+    } else {
+      console.error('catList element bulunamadı');
+    }
+  } catch (error) {
+    console.error('Kategoriler yüklenirken hata:', error);
+  }
+};
+
+// Kategori form submit event listener'ı DOMContentLoaded içinde tanımlanacak
+
+// Products - Elementler DOMContentLoaded içinde tanımlanıyor
+
+// Modal fonksiyonları DOMContentLoaded içinde tanımlanacak
+
+// Event listener'ları güvenli şekilde ekle
+
+// SizeStocks dynamic rows - DOMContentLoaded içinde tanımlanacak
+
+// Color Variants dynamic rows
+
+// Renk varyantından yeni ürün oluşturma fonksiyonu
+const createProductFromColorVariant = (colorRow) => {
+  const colorName = colorRow.querySelector('input[name="colorName[]"]').value;
+  const colorHex = colorRow.querySelector('input[type="color"]').value;
+  const colorImageFile = colorRow.colorImageFile;
+  
+  if (!colorName.trim()) {
+    alert('Lütfen önce renk adını girin');
+    return;
+  }
+  
+  if (!colorImageFile) {
+    alert('Lütfen önce renk görselini ekleyin');
+    return;
+  }
+  
+  // Mevcut ürün bilgilerini al
+  const currentProductName = document.querySelector('[name="name"]').value;
+  const currentProductDesc = document.querySelector('[name="description"]').value;
+  const currentProductPrice = document.querySelector('[name="price"]').value;
+  const currentProductCategory = document.getElementById('prodCat').value;
+  
+  // Yeni ürün için form verilerini hazırla
+  const newProductData = {
+    name: `${currentProductName} - ${colorName}`,
+    description: currentProductDesc,
+    price: currentProductPrice,
+    category: currentProductCategory,
+    colorVariants: [{
+      name: colorName,
+      hexCode: colorHex,
+      imageUrl: '' // Görsel dosya olarak gönderilecek
+    }],
+    images: [colorImageFile] // Renk görselini ana görsel olarak kullan
+  };
+  
+  // Yeni ürün oluşturma modalını aç
+  openNewProductModal(newProductData);
+};
+
+// addColorVariant fonksiyonu DOMContentLoaded içinde tanımlanacak
+
+// Event listener'lar DOMContentLoaded içinde tanımlanacak
+
+// Yeni ürün modalı açma fonksiyonu
+const openNewProductModal = (productData) => {
+  // Yeni ürün oluşturma modalı
+  const modalHTML = `
+    <div id="newProductModal" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Yeni Ürün Oluştur</h3>
+          <button id="closeNewProductModal" class="p-2 rounded-lg hover:bg-slate-100" aria-label="Kapat">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Ürün Adı</label>
+            <input id="newProductName" value="${productData.name || ''}" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Açıklama</label>
+            <input id="newProductDesc" value="${productData.description || ''}" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Fiyat (₺)</label>
+            <input id="newProductPrice" type="number" step="0.01" value="${productData.price || ''}" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-700 mb-1">Kategori</label>
+            <select id="newProductCategory" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2">
+              <!-- Kategoriler buraya yüklenecek -->
+            </select>
+          </div>
+          <div class="flex items-center justify-end gap-2 mt-6">
+            <button type="button" id="cancelNewProductBtn" class="px-4 py-2 rounded-xl border">Vazgeç</button>
+            <button type="button" id="createNewProductBtn" class="px-5 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">Ürünü Oluştur</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Modal'ı DOM'a ekle
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Event listener'ları ekle
+  const modal = document.getElementById('newProductModal');
+  const closeBtn = document.getElementById('closeNewProductModal');
+  const cancelBtn = document.getElementById('cancelNewProductBtn');
+  const createBtn = document.getElementById('createNewProductBtn');
+  
+  // Kategorileri yükle
+  const categorySelect = document.getElementById('newProductCategory');
+  if (categorySelect) {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(cats => {
+        categorySelect.innerHTML = cats.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+        if (productData.category) {
+          categorySelect.value = productData.category;
+        }
+      })
+      .catch(err => console.error('Kategoriler yüklenemedi:', err));
+  }
+  
+  // Modal'ı kapat
+  const closeModal = () => modal.remove();
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Yeni ürün oluştur
+  createBtn.addEventListener('click', async () => {
+    const name = document.getElementById('newProductName').value.trim();
+    const description = document.getElementById('newProductDesc').value.trim();
+    const price = Number(document.getElementById('newProductPrice').value);
+    const categoryId = document.getElementById('newProductCategory').value;
+    
+    if (!name || !price || !categoryId) {
+      alert('Lütfen tüm gerekli alanları doldurun');
+      return;
+    }
+    
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', description);
+      formData.append('price', price);
+      formData.append('categoryId', categoryId);
+      
+      // Renk varyantı görselini ekle
+      if (productData.colorVariants && productData.colorVariants.length > 0) {
+        const colorVariant = productData.colorVariants[0];
+        formData.append('colorVariants', JSON.stringify([colorVariant]));
+      }
+      
+      // Görselleri ekle
+      if (productData.images && productData.images.length > 0) {
+        formData.append('image', productData.images[0]);
+      }
+      
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Ürün oluşturulamadı: ${errorData.message || 'Bilinmeyen hata'}`);
+        return;
+      }
+      
+      alert('Yeni ürün başarıyla oluşturuldu!');
+      closeModal();
+      await loadProducts();
+      
+    } catch (error) {
+      console.error('Ürün oluşturulurken hata:', error);
+      alert('Ürün oluşturulurken bir hata oluştu');
+    }
+  });
+};
+
+// Color variants event listeners - DOMContentLoaded içinde tanımlanacak
+// addColorVariantBtn?.addEventListener('click', () => addColorVariant());
+
+const productCard = (p) => {
+  const div = document.createElement('div');
+  div.className = 'border rounded-xl p-3 space-y-2';
+  const img = p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  div.innerHTML = `
+    <img src="${img}" class="w-full h-40 object-cover rounded-lg" alt="${p.name}" />
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="font-medium text-slate-800">${p.name}</div>
+        <div class="text-sm text-slate-500">${p.size || '-'} • Stok: ${p.stock}</div>
+      </div>
+      <div class="text-indigo-600 font-semibold">${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(p.price)}</div>
+    </div>
+    <div class="flex items-center justify-end gap-2 pt-1">
+      <button data-id="${p._id}" class="prod-edit text-sm text-indigo-600 hover:text-indigo-800">Düzenle</button>
+      <button data-id="${p._id}" class="prod-del text-sm text-rose-600 hover:text-rose-800">Sil</button>
+    </div>
+  `;
+  return div;
+};
+
+const renderProductRow = (p) => {
+  const tr = document.createElement('tr');
+  const img = p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  const hasCustomImage = !!p.imageUrl;
+  tr.className = 'hover:bg-slate-50 transition';
+  tr.innerHTML = `
+    <td class="py-2 pr-4">
+      <div class="relative">
+        <img src="${img}" class="w-12 h-12 object-cover rounded" />
+        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center ${hasCustomImage ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}" title="${hasCustomImage ? 'Özel Görsel' : 'Varsayılan Görsel'}">
+          ${hasCustomImage ? '✓' : '!'}
+        </div>
+      </div>
+    </td>
+    <td class="py-2 pr-4">${p.name}</td>
+    <td class="py-2 pr-4">${p.categoryId?.name || '-'}</td>
+    <td class="py-2 pr-4">${p.sizeStocks?.length ? p.sizeStocks.map(s=>`${s.size}:${s.stock}`).join(', ') : (p.size || '-')}</td>
+    <td class="py-2 pr-4">${p.sizeStocks?.reduce((a,s)=>a+Number(s.stock||0),0) || p.stock}</td>
+    <td class="py-2 pr-4">${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(p.price)}</td>
+    <td class="py-2 pr-4 text-right">
+      <button data-id="${p._id}" class="prod-stock px-2 py-1 rounded-lg border mr-2">Stok</button>
+      <button data-id="${p._id}" class="prod-edit px-2 py-1 rounded-lg border mr-2">Düzenle</button>
+      <button data-id="${p._id}" class="prod-del px-2 py-1 rounded-lg border text-rose-600">Sil</button>
+    </td>
+  `;
+  return tr;
+};
+
+const loadProducts = async () => {
+  try {
+    const res = await fetch('/api/products');
+    if (res.status === 401) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
+    const prods = await res.json();
+    
+    console.log('Yüklenen ürünler:', prods);
+    
+    if (prodTableBody) {
+      prodTableBody.innerHTML = '';
+      prods.forEach((p) => prodTableBody.appendChild(renderProductRow(p)));
+
+      prodTableBody.querySelectorAll('.prod-del').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          if (!confirm('Ürünü silmek istediğinize emin misiniz?')) return;
+          await authFetch(`/api/products/${btn.dataset.id}`, { method: 'DELETE' });
+          await loadProducts();
+        })
+      );
+
+      prodTableBody.querySelectorAll('.prod-edit').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          // open modal in edit mode
+          editingProductId = btn.dataset.id;
+          const res = await fetch(`/api/products`);
+          if (res.status === 401) {
+            alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+            localStorage.removeItem('token');
+            window.location.href = '/admin/login.html';
+            return;
+          }
+          const products = await res.json();
+          const p = products.find(i=>i._id===editingProductId);
+          if (!p) return;
+          openProductModal(); // Modal'ı düzgün şekilde aç
+          
+          // Form alanlarını doldur
+          const nameInput = prodForm.querySelector('[name="name"]');
+          const descInput = prodForm.querySelector('[name="description"]');
+          const priceInput = prodForm.querySelector('[name="price"]');
+          
+          if (nameInput) nameInput.value = p.name || '';
+          if (descInput) descInput.value = p.description || '';
+          if (priceInput) priceInput.value = p.price || '';
+          
+          // Kategori seçimi
+          const catSelect = document.getElementById('prodCat');
+          if (catSelect && p.categoryId?._id) catSelect.value = p.categoryId._id;
+          
+          // Show existing images
+          if (p.images && p.images.length > 0) {
+            // Çoklu görsel desteği
+            productImages = p.images.map((img, index) => ({
+              id: Date.now() + index,
+              file: null, // Mevcut görseller için file yok
+              name: img.name || `Görsel ${index + 1}`,
+              size: 0,
+              isMain: img.isMain || index === 0,
+              url: img.url // Mevcut görsel URL'i
+            }));
+            renderProductImages();
+            updateImageControls();
+          } else if (p.imageUrl) {
+            // Eski tek görsel desteği (geriye dönük uyumluluk)
+            productImages = [{
+              id: Date.now(),
+              name: 'Mevcut Görsel',
+              size: 0,
+              isMain: true,
+              url: p.imageUrl
+            }];
+            renderProductImages();
+            updateImageControls();
+          } else {
+            productImages = [];
+            renderProductImages();
+            updateImageControls();
+          }
+          
+          // sizeStocks
+          sizeStocksContainer.innerHTML = '';
+          (p.sizeStocks?.length ? p.sizeStocks : []).forEach((s) => addSizeRow({ size: s.size, stock: s.stock }));
+          if (!p.sizeStocks?.length) addSizeRow();
+          
+          // variants - yeni sistem
+          variantsContainer.innerHTML = '';
+          if (p.variants && p.variants.length > 0) {
+            p.variants.forEach((v) => addVariant({
+              color: v.color,
+              images: v.images || [],
+              stock: v.stock || 0,
+              sizes: v.sizes || []
+            }));
+          } else {
+            addVariant(); // Varsayılan varyant ekle
+          }
+        })
+      );
+
+      prodTableBody.querySelectorAll('.prod-stock').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          // Stok güncelleme modalı aç
+          const productId = btn.dataset.id;
+          const product = prods.find(p => p._id === productId);
+          if (!product) return;
+          
+          // Basit stok güncelleme
+          const newStock = prompt(`"${product.name}" ürününün stok miktarını girin:`, product.stock || 0);
+          if (newStock === null) return;
+          
+          const stockNum = Number(newStock);
+          if (isNaN(stockNum) || stockNum < 0) {
+            alert('Geçerli bir stok miktarı girin');
+            return;
+          }
+          
+          try {
+            await authFetch(`/api/products/${productId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ stock: stockNum })
+            });
+            
+            alert('Stok başarıyla güncellendi!');
+            await loadProducts();
+          } catch (error) {
+            console.error('Stok güncellenirken hata:', error);
+            alert('Stok güncellenirken bir hata oluştu');
+          }
+        })
+      );
+    } else {
+      console.error('prodTableBody element bulunamadı');
+    }
+  } catch (error) {
+    console.error('Ürünler yüklenirken hata:', error);
+  }
+};
+
+prodForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  // Form validasyonu
+  const formData = new FormData(prodForm);
+  const name = formData.get('name')?.trim();
+  const categoryId = formData.get('categoryId');
+  const price = Number(formData.get('price'));
+  
+  if (!name || name.length < 2) {
+    alert('Ürün adı en az 2 karakter olmalıdır');
+    return;
+  }
+  
+  if (!categoryId) {
+    alert('Kategori seçimi zorunludur');
+    return;
+  }
+  
+  if (!price || price <= 0) {
+    alert('Geçerli bir fiyat giriniz');
+    return;
+  }
+  
+  // collect sizeStocks from dynamic rows
+  const rows = sizeStocksContainer?.querySelectorAll('div');
+  const sizeStocks = [];
+  rows?.forEach((row) => {
+    const inputs = row.querySelectorAll('input');
+    const size = inputs?.[0]?.value?.trim();
+    const stock = Number(inputs?.[1]?.value ?? '');
+    if (size && !Number.isNaN(stock)) sizeStocks.push({ size, stock });
+  });
+  if (sizeStocks.length) formData.append('sizeStocks', JSON.stringify(sizeStocks));
+
+  // collect variants from new variant system
+  const variantCards = variantsContainer?.querySelectorAll('[data-variant-id]');
+  const variants = [];
+  variantCards?.forEach((card, index) => {
+    const colorName = card.querySelector('.variant-color-name')?.value?.trim();
+    const stock = Number(card.querySelector('.variant-stock')?.value || 0);
+    const sizeInputs = card.querySelectorAll('.variant-size');
+    const sizes = Array.from(sizeInputs).map(input => input.value.trim()).filter(size => size);
+    
+    if (colorName && sizes.length > 0) {
+      const variant = {
+        color: colorName,
+        stock: stock,
+        sizes: sizes
+      };
+      
+      // Görselleri topla
+      const imageElements = card.querySelectorAll('.variant-images-preview img');
+      const images = [];
+      imageElements.forEach((img, imgIndex) => {
+        const imageDiv = img.closest('.relative');
+        if (imageDiv && imageDiv.dataset.fileName) {
+          // Dosya referansı varsa FormData'ya ekle
+          const file = new File([], imageDiv.dataset.fileName, { 
+            type: imageDiv.dataset.fileType || 'image/jpeg' 
+          });
+          formData.append(`variantImages[${index}][${imgIndex}]`, file);
+          images.push(imageDiv.dataset.fileName);
+        } else {
+          // Mevcut görsel URL'i
+          images.push(img.src);
+        }
+      });
+      
+      variant.images = images;
+      variants.push(variant);
+    }
+  });
+  if (variants.length) formData.append('variants', JSON.stringify(variants));
+
+  // Çoklu görselleri FormData'ya ekle
+  if (productImages.length > 0) {
+    // Ana görseli image olarak ekle (geriye dönük uyumluluk)
+    const mainImage = productImages.find(img => img.isMain) || productImages[0];
+    if (mainImage) {
+      formData.set('image', mainImage.file);
+    }
+    
+    // Tüm görselleri images array olarak ekle
+    productImages.forEach((img, index) => {
+      formData.append(`images[${index}][file]`, img.file);
+      formData.append(`images[${index}][name]`, img.name);
+      formData.append(`images[${index}][isMain]`, img.isMain);
+    });
+  }
+
+  try {
+    const url = editingProductId ? `/api/products/${editingProductId}` : '/api/products';
+    const method = editingProductId ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { Authorization: `Bearer ${token}` }, body: formData });
+    
+    if (res.status === 401) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      alert(`Ürün kaydedilemedi: ${errorData.message || 'Bilinmeyen hata'}`);
+      return;
+    }
+    
+    alert(editingProductId ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
+    editingProductId = null;
+    await loadProducts();
+    prodModal.classList.add('hidden');
+    prodModal.classList.remove('flex', 'items-center', 'justify-center');
+  } catch (error) {
+    console.error('Ürün kaydedilirken hata:', error);
+    alert('Ürün kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+  }
+});
+
+// init
+document.addEventListener('DOMContentLoaded', async () => {
+
+  
+  // Elementleri tanımla
+  const openProdModal = document.getElementById('openProdModal');
+  const prodModal = document.getElementById('prodModal');
+  const closeProdModal = document.getElementById('closeProdModal');
+  const prodForm = document.getElementById('prodForm');
+  const prodTableBody = document.getElementById('prodTableBody');
+  const addVariantBtn = document.getElementById('addVariantBtn');
+  const variantsContainer = document.getElementById('variantsContainer');
+  const sizeStocksContainer = document.getElementById('sizeStocksContainer');
+  const colorVariantsContainer = document.getElementById('colorVariantsContainer');
+  const addColorVariantBtn = document.getElementById('addColorVariantBtn');
+  const addSizeRowBtn = document.getElementById('addSizeRowBtn');
+  
+  // Kategori elementleri
+  catForm = document.getElementById('catForm');
+  catList = document.getElementById('catList');
+  prodCatSelect = document.getElementById('prodCat');
+  
+  // Görsel yönetimi elementleri
+  catImageInput = document.getElementById('catImageInput');
+  catImagePreview = document.getElementById('catImagePreview');
+  catDropZone = document.getElementById('catDropZone');
+  catImageControls = document.getElementById('catImageControls');
+  pickCatImageBtn = document.getElementById('pickCatImageBtn');
+  removeCatImageBtn = document.getElementById('removeCatImageBtn');
+  editCatImageBtn = document.getElementById('editCatImageBtn');
+  catImageSize = document.getElementById('catImageSize');
+  catImageDimensions = document.getElementById('catImageDimensions');
+  
+  // Element kontrolü
+  if (!prodModal || !prodForm || !sizeStocksContainer || !variantsContainer) {
+    console.error('Gerekli DOM elementleri bulunamadı!');
+    return;
+  }
+  
+  // Element kontrolü
+  if (!prodModal || !prodForm || !sizeStocksContainer || !variantsContainer) {
+    console.error('Gerekli DOM elementleri bulunamadı!');
+    return;
+  }
+  
+
+  
+  // Event listener'ları güvenli şekilde ekle
+  if (openProdModal) {
+    openProdModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      openProductModal();
+    });
+  }
+
+  if (closeProdModal) {
+    closeProdModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeProductModal();
+    });
+  }
+
+  // Modal dışına tıklandığında kapat
+  if (prodModal) {
+    prodModal.addEventListener('click', (e) => {
+      if (e.target === prodModal) {
+        closeProductModal();
+      }
+    });
+  }
+  
+  // Modal açma fonksiyonunu tanımla
+  const openProductModal = () => {
+    // Form ve tüm alanları temizle
+    if (prodForm) {
+      prodForm.reset();
+    }
+    
+    // Editing modunu sıfırla
+    editingProductId = null;
+    
+    // Dinamik container'ları temizle
+    if (sizeStocksContainer) {
+      sizeStocksContainer.innerHTML = '';
+      addSizeRow(); // Varsayılan bir satır ekle
+    }
+    
+    if (variantsContainer) {
+      variantsContainer.innerHTML = '';
+      addVariant(); // Varsayılan bir varyant ekle
+    }
+    
+    // Çoklu görselleri temizle
+    productImages = [];
+    if (typeof renderProductImages === 'function') {
+      renderProductImages();
+    }
+    if (typeof updateImageControls === 'function') {
+      updateImageControls();
+    }
+    
+    // Modal'ı göster
+    if (prodModal) {
+      prodModal.classList.remove('hidden');
+      prodModal.classList.add('flex', 'items-center', 'justify-center');
+    }
+  };
+
+  // Modal kapatma fonksiyonunu tanımla
+  const closeProductModal = () => {
+    if (prodModal) {
+      prodModal.classList.add('hidden');
+      prodModal.classList.remove('flex', 'items-center', 'justify-center');
+    }
+    
+    // Form ve alanları temizle
+    if (prodForm) {
+      prodForm.reset();
+    }
+    
+    // Dinamik container'ları temizle
+    if (sizeStocksContainer) {
+      sizeStocksContainer.innerHTML = '';
+    }
+    
+    if (variantsContainer) {
+      variantsContainer.innerHTML = '';
+    }
+    
+    // Çoklu görselleri temizle
+    productImages = [];
+    if (typeof renderProductImages === 'function') {
+      renderProductImages();
+    }
+    if (typeof updateImageControls === 'function') {
+      updateImageControls();
+    }
+    
+    editingProductId = null;
+  };
+  
+  // addSizeRow fonksiyonunu tanımla
+  addSizeRow = (val = { size: '', stock: '' }) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 p-3 border border-slate-200 rounded-xl bg-slate-50';
+    row.innerHTML = `
+      <input placeholder="Beden (örn: S)" class="flex-1 rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" value="${val.size ?? ''}">
+      <input type="number" min="0" placeholder="Stok" class="w-32 rounded-xl border-slate-200 focus:ring-[#CBA135] px-3 py-2" value="${val.stock ?? ''}">
+      <button type="button" class="size-remove px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">Sil</button>
+    `;
+    const delBtn = row.querySelector('.size-remove');
+    delBtn.addEventListener('click', () => {
+      // Scroll pozisyonunu koru
+      const currentScrollTop = sizeStocksContainer.scrollTop;
+      row.remove();
+      setTimeout(() => {
+        sizeStocksContainer.scrollTop = currentScrollTop;
+      }, 10);
+    });
+    
+    // Scroll pozisyonunu koru
+    const currentScrollTop = sizeStocksContainer.scrollTop;
+    sizeStocksContainer.appendChild(row);
+    setTimeout(() => {
+      sizeStocksContainer.scrollTop = currentScrollTop;
+    }, 10);
+  };
+
+  // addColorVariant fonksiyonunu tanımla
+  addColorVariant = (val = { name: '', hexCode: '', imageUrl: '', colorImageFile: null, isMainColor: false }) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 p-3 border border-slate-200 rounded-xl bg-slate-50';
+    row.innerHTML = `
+      <div class="flex-1">
+        <input placeholder="Renk Adı (örn: Kırmızı)" class="w-full rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 text-sm" value="${val.name ?? ''}" name="colorName[]">
+      </div>
+      <div class="w-24">
+        <input type="color" class="w-full h-10 rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135]" value="${val.hexCode ?? '#000000'}" name="colorHex[]">
+      </div>
+      <div class="w-40">
+        <div class="flex items-center gap-2">
+          <input type="file" accept="image/*" class="color-image-input hidden" />
+          <button type="button" class="color-pick-btn px-2 py-1 text-xs rounded border border-slate-300 hover:bg-slate-50">
+            ${val.colorImageFile || val.imageUrl ? 'Görsel Değiştir' : 'Görsel Ekle'}
+          </button>
+        </div>
+        <div class="color-image-preview mt-1 ${val.colorImageFile || val.imageUrl ? '' : 'hidden'}">
+          <img src="${val.colorImageFile ? URL.createObjectURL(val.colorImageFile) : val.imageUrl}" class="w-8 h-8 object-cover rounded border" />
+        </div>
+      </div>
+      <button type="button" class="variant-remove px-3 py-2 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50">Sil</button>
+    `;
+    
+    const delBtn = row.querySelector('.variant-remove');
+    const colorImageInput = row.querySelector('.color-image-input');
+    const colorPickBtn = row.querySelector('.color-pick-btn');
+    const colorImagePreview = row.querySelector('.color-image-preview');
+    
+    // Görsel seçme butonu
+    colorPickBtn.addEventListener('click', () => colorImageInput.click());
+    
+    // Görsel seçildiğinde
+    colorImageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Kırpma modalı aç
+      openCropperModal(file, {
+        aspectRatio: getProductCardAspectRatio(),
+        onDone: (blob) => {
+          const croppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+          
+          // Row'a dosya referansını ekle
+          row.colorImageFile = croppedFile;
+          
+          // Preview'i güncelle
+          const img = colorImagePreview.querySelector('img');
+          img.src = URL.createObjectURL(croppedFile);
+          colorImagePreview.classList.remove('hidden');
+          
+          // Buton metnini güncelle
+          colorPickBtn.textContent = 'Görsel Değiştir';
+          
+          // Input'u temizle
+          colorImageInput.value = '';
+        }
+      });
+    });
+    
+    delBtn.addEventListener('click', () => row.remove());
+    colorVariantsContainer.appendChild(row);
+  };
+
+  // Yeni gelişmiş varyant sistemi fonksiyonu
+  addVariant = (val = { color: '', images: [], stock: 0, sizes: [] }) => {
+    const variantId = Date.now() + Math.random();
+    const variantCard = document.createElement('div');
+    variantCard.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50';
+    variantCard.dataset.variantId = variantId;
+    
+    // Güvenli görsel URL'leri
+    const safeImages = val.images && val.images.length > 0 ? val.images : [];
+    const safeSizes = val.sizes && val.sizes.length > 0 ? val.sizes : [];
+    
+    variantCard.innerHTML = `
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="font-semibold text-slate-800">Renk Varyantı</h4>
+        <button type="button" class="variant-delete-btn p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Sol Kolon: Renk Adı ve Görseller -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Renk Adı</label>
+            <input type="text" placeholder="Örn: Kırmızı, Mavi, Siyah" 
+                   class="variant-color-name w-full rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" 
+                   value="${val.color || ''}" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Renk Görselleri</label>
+            <div class="variant-images-dropzone border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-[#CBA135] transition-colors cursor-pointer">
+              <input type="file" class="variant-images-input hidden" multiple accept="image/*" />
+              <div class="variant-images-preview grid grid-cols-3 gap-2 mt-3">
+                ${safeImages.map(img => `
+                  <div class="relative">
+                    <img src="${img}" class="w-16 h-16 object-cover rounded-lg" />
+                    <button type="button" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-5 h-5 text-xs hover:bg-rose-600">×</button>
+                  </div>
+                `).join('')}
+              </div>
+              <p class="text-sm text-slate-500 mt-2">
+                <span class="text-[#CBA135] underline">Görsel seçin</span> veya sürükleyip bırakın
+              </p>
+              <p class="text-xs text-slate-400">Birden fazla görsel seçebilirsiniz</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sağ Kolon: Stok ve Bedenler -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Toplam Stok</label>
+            <input type="number" min="0" placeholder="0" 
+                   class="variant-stock w-full rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" 
+                   value="${val.stock || ''}" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Beden Seçenekleri</label>
+            <div class="variant-sizes-container space-y-2">
+              ${safeSizes.map(size => `
+                <div class="flex items-center gap-2">
+                  <input type="text" placeholder="Beden" 
+                         class="variant-size flex-1 rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" 
+                         value="${size}" />
+                  <button type="button" class="variant-size-remove p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+            <button type="button" class="variant-add-size-btn mt-2 px-3 py-1.5 text-sm text-[#CBA135] border border-[#CBA135] rounded-lg hover:bg-[#CBA135] hover:text-white transition-colors">
+              + Beden Ekle
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Event listener'ları ekle
+    const deleteBtn = variantCard.querySelector('.variant-delete-btn');
+    const imagesInput = variantCard.querySelector('.variant-images-input');
+    const imagesDropzone = variantCard.querySelector('.variant-images-dropzone');
+    const addSizeBtn = variantCard.querySelector('.variant-add-size-btn');
+    
+    // Varyant silme
+    deleteBtn.addEventListener('click', () => {
+      // Smooth scroll davranışı için
+      const container = variantsContainer;
+      const scrollTop = container.scrollTop;
+      
+      variantCard.remove();
+      
+      // Scroll pozisyonunu koru
+      setTimeout(() => {
+        container.scrollTop = scrollTop;
+      }, 10);
+    });
+    
+    // Görsel ekleme
+    imagesDropzone.addEventListener('click', () => imagesInput.click());
+    imagesInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+      
+      // Her dosya için kırpma modalı aç
+      files.forEach((file, index) => {
+        openCropperModal(file, {
+          aspectRatio: getProductCardAspectRatio(),
+          onDone: (blob) => {
+            const croppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+            addVariantImage(variantCard, croppedFile);
+            
+            // Son dosya işlendikten sonra input'u temizle
+            if (index === files.length - 1) {
+              imagesInput.value = '';
+            }
+          }
+        });
+      });
+    });
+    
+    // Drag & Drop
+    setupDragAndDrop(imagesDropzone, imagesInput, (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+      
+      files.forEach((file, index) => {
+        openCropperModal(file, {
+          aspectRatio: getProductCardAspectRatio(),
+          onDone: (blob) => {
+            const croppedFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+            addVariantImage(variantCard, croppedFile);
+            
+            if (index === files.length - 1) {
+              imagesInput.value = '';
+            }
+          }
+        });
+      });
+    });
+    
+    // Beden ekleme
+    addSizeBtn.addEventListener('click', () => {
+      addVariantSize(variantCard);
+    });
+    
+    // Varsayılan bedenler ekle
+    if (!val.sizes || val.sizes.length === 0) {
+      ['S', 'M', 'L'].forEach(size => addVariantSize(variantCard, size));
+    }
+    
+    // Varyant eklenirken scroll pozisyonunu koru
+    const currentScrollTop = variantsContainer.scrollTop;
+    variantsContainer.appendChild(variantCard);
+    
+    // Scroll pozisyonunu koru
+    setTimeout(() => {
+      variantsContainer.scrollTop = currentScrollTop;
+    }, 10);
+
+  
+  // Varyant görsel ekleme yardımcı fonksiyonu
+  const addVariantImage = (variantCard, file) => {
+    const previewContainer = variantCard.querySelector('.variant-images-preview');
+    if (!previewContainer) return;
+    
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'relative';
+    imageDiv.innerHTML = `
+      <img src="${URL.createObjectURL(file)}" class="w-16 h-16 object-cover rounded-lg" />
+      <button type="button" class="variant-image-remove absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-5 h-5 text-xs hover:bg-rose-600">×</button>
+    `;
+    
+    // Görsel silme
+    const removeBtn = imageDiv.querySelector('.variant-image-remove');
+    removeBtn.addEventListener('click', () => imageDiv.remove());
+    
+    // Dosya referansını sakla
+    imageDiv.dataset.fileName = file.name;
+    imageDiv.dataset.fileSize = file.size;
+    imageDiv.dataset.fileType = file.type;
+    
+    previewContainer.appendChild(imageDiv);
+  };
+  
+  // Varyant beden ekleme yardımcı fonksiyonu
+  const addVariantSize = (variantCard, size = '') => {
+    const sizesContainer = variantCard.querySelector('.variant-sizes-container');
+    if (!sizesContainer) return;
+    
+    const sizeDiv = document.createElement('div');
+    sizeDiv.className = 'flex items-center gap-2';
+    sizeDiv.innerHTML = `
+      <input type="text" placeholder="Beden" 
+             class="variant-size flex-1 rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" 
+             value="${size}" />
+      <button type="button" class="variant-size-remove p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+      </button>
+    `;
+    
+    // Beden silme
+    const removeBtn = sizeDiv.querySelector('.variant-size-remove');
+    removeBtn.addEventListener('click', () => {
+      // Scroll pozisyonunu koru
+      const currentScrollTop = sizesContainer.scrollTop;
+      sizeDiv.remove();
+      setTimeout(() => {
+        sizesContainer.scrollTop = currentScrollTop;
+      }, 10);
+    });
+    
+    // Scroll pozisyonunu koru
+    const currentScrollTop = sizesContainer.scrollTop;
+    sizesContainer.appendChild(sizeDiv);
+    setTimeout(() => {
+      sizesContainer.scrollTop = currentScrollTop;
+    }, 10);
+  };
+  
+  // Eksik event listener'ları ekle
+  if (addSizeRowBtn) {
+    addSizeRowBtn.addEventListener('click', () => addSizeRow());
+  }
+  
+  if (addColorVariantBtn) {
+    addColorVariantBtn.addEventListener('click', () => addColorVariant());
+  }
+  
+  if (addVariantBtn) {
+    addVariantBtn.addEventListener('click', () => {
+      addVariant();
+    });
+  }
+  
+  // Varsayılan bedenler ekleme butonu
+  const addDefaultSizesBtn = document.getElementById('addDefaultSizesBtn');
+  if (addDefaultSizesBtn) {
+    addDefaultSizesBtn.addEventListener('click', () => {
+      if (sizeStocksContainer) {
+        sizeStocksContainer.innerHTML = '';
+        ['XS','S','M','L','XL'].forEach((sz) => addSizeRow({ size: sz, stock: 0 }));
+      }
+    });
+  }
+  
+
+  
+  // Token geçerliliğini kontrol et
+  const isValid = await checkTokenValidity();
+  if (!isValid) return;
+  
+  // Setup image management
+  setupImageManagement();
+  
+  await loadCategories();
+  await loadProducts();
+});
+
+// Kategori form submit event listener'ı
+catForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  // Form validasyonu
+  const formData = new FormData(catForm);
+  const name = formData.get('name')?.trim();
+  
+  if (!name) {
+    alert('Kategori adı zorunludur');
+    return;
+  }
+  
+  if (name.length < 2) {
+    alert('Kategori adı en az 2 karakter olmalıdır');
+    return;
+  }
+  
+  // Kırpılmış görsel dosyasını FormData'ya ekle
+  if (catCroppedFile) {
+    formData.set('image', catCroppedFile);
+  }
+
+  try {
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    
+    if (res.status === 401) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      alert(`Kategori eklenemedi: ${errorData.message || 'Bilinmeyen hata'}`);
+      return;
+    }
+    
+    alert('Kategori başarıyla eklendi!');
+    catForm.reset();
+    removeCatImage(); // Reset image preview
+    // Kırpılmış görsel dosyasını temizle
+    catCroppedFile = null;
+    await loadCategories();
+  } catch (error) {
+    console.error('Kategori eklenirken hata:', error);
+    alert('Kategori eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+  }
+});
+
+// Dinamik oran tespiti (kategori kartındaki class'lardan okur, yoksa varsayılan)
+function parseAspectFromClassList(el, fallback = 1.6) {
+  if (!el) return fallback;
+  const cls = (el.className || '').toString();
+  const m = cls.match(/aspect-\[(\d+)\s*\/\s*(\d+)\]/); // ör: aspect-[16/10]
+  if (m) {
+    const w = Number(m[1]), h = Number(m[2]);
+    if (w > 0 && h > 0) return w / h;
+  }
+  return fallback;
+}
+function getCategoryCardAspectRatio() {
+  // Admin kategori gridinde kart gövdesi: <div class="aspect-[16/10] ...">
+  const probe = document.querySelector('#catList .aspect-\\[16\\/10\\], #catList [class*="aspect-["]');
+  // Yoksa 16:10'a düş
+  return parseAspectFromClassList(probe, 16 / 10);
+}
+function getProductCardAspectRatio() {
+  // Ürün kartları için daha da kare yakın oran (6:5 = 1.2)
+  // Bu oran boydan çok daha fazla alan sağlar
+  return 6 / 5;
+}
+
+// Canvas'tan Blob üretimi (Safari fallback dahil)
+function canvasToBlobCompat(canvas, cb, type = 'image/jpeg', quality = 0.9) {
+  if (canvas.toBlob) return canvas.toBlob(cb, type, quality);
+  const dataUrl = canvas.toDataURL(type, quality);
+  const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+  while (n--) u8[n] = bstr.charCodeAt(n);
+  cb(new Blob([u8], { type: mime }));
+}
+
+// Kırpma modali (interaktif sürükle/zoom, sabit aspectRatio)
+async function openCropperModal(file, { aspectRatio = 4/3, onDone } = {}) {
+  // Cropper.js kontrolü
+  const isAvailable = await checkCropperAvailability();
+  if (!isAvailable) {
+    simpleCropFallback(file, { aspectRatio, onDone });
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden">
+      <div class="p-4 flex items-center justify-between border-b">
+        <div>
+          <h3 class="text-lg font-semibold">Görseli Kırp</h3>
+          <p class="text-sm text-slate-500">${file.name}</p>
+        </div>
+        <button id="cropClose" class="p-2 rounded-lg hover:bg-slate-100">✕</button>
+      </div>
+      <div class="p-4">
+        <div class="relative max-h-[70vh] overflow-auto">
+          <img id="cropImage" src="${url}" class="max-w-full select-none" />
+        </div>
+        <div class="flex items-center gap-3 mt-4 justify-end">
+          <span class="text-sm text-slate-500 mr-auto">Oran: ${aspectRatio.toFixed(3).replace(/\.0+$/,'')}</span>
+          <button id="cropCancel" class="px-4 py-2 border rounded">Vazgeç</button>
+          <button id="cropSave" class="px-4 py-2 rounded text-white" style="background:linear-gradient(135deg,#CBA135,#E3C77E)">Kırp ve Kaydet</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const img = modal.querySelector('#cropImage');
+  let cropper;
+  img.addEventListener('load', () => {
+    cropper = new Cropper(img, {
+      aspectRatio,
+      viewMode: 1,         // görüntü alanı dışına taşmasın
+      dragMode: 'move',    // fare ile sürükle
+      autoCrop: true,
+      autoCropArea: 1,     // ilk açılışta alanı doldur
+      movable: true,
+      zoomable: true,      // teker ile zoom
+      wheelZoomRatio: 0.1,
+      background: false,
+      responsive: true,
+      guides: true,
+      center: true,
+      highlight: true
+    });
+  });
+
+  const close = () => { cropper?.destroy(); URL.revokeObjectURL(url); modal.remove(); };
+  modal.querySelector('#cropClose').onclick = close;
+  modal.querySelector('#cropCancel').onclick = close;
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  modal.querySelector('#cropSave').addEventListener('click', () => {
+    const canvas = cropper.getCroppedCanvas({ maxWidth: 1600, maxHeight: 1600 });
+    if (!canvas) return;
+    canvasToBlobCompat(canvas, (blob) => { if (blob) onDone?.(blob); close(); });
+  });
+}
+
+// Input'a kırpılmış dosyayı güvenle yerleştir (Safari uyumlu DataTransfer)
+function replaceInputFile(inputEl, origName, blob) {
+  const f = new File([blob], origName || 'image.jpg', { type: blob.type || 'image/jpeg' });
+  try {
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    inputEl.files = dt.files;
+  } catch {
+    // Safari eski sürümler fallback: form submit sırasında FormData.set ile ekleyeceğiz
+  }
+  return f;
+}
+
+// Global fonksiyonlar (HTML onclick'ler için) - Tüm fonksiyonlar tanımlandıktan sonra
+window.setMainImage = setMainImage;
+window.removeProductImage = removeProductImage;

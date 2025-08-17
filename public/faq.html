@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sıkça Sorulan Sorular - Butik Mağaza</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
+              display: ['Playfair Display', 'serif']
+            },
+            colors: {
+              champagne: {
+                50: '#FEFCF7',
+                100: '#FDF8ED',
+                200: '#FBF0D6',
+                300: '#F8E4B8',
+                400: '#F4D494',
+                500: '#F0C270',
+                600: '#E8A94A',
+                700: '#D18F2E',
+                800: '#A87225',
+                900: '#8A5F22'
+              },
+              gold: {
+                50: '#FFFBEB',
+                100: '#FEF3C7',
+                200: '#FDE68A',
+                300: '#FCD34D',
+                400: '#FBBF24',
+                500: '#F59E0B',
+                600: '#D97706',
+                700: '#B45309',
+                800: '#92400E',
+                900: '#78350F'
+              },
+              pastel: {
+                pink: '#FCE7F3',
+                lavender: '#F3E8FF',
+                blue: '#DBEAFE',
+                green: '#D1FAE5',
+                yellow: '#FEF3C7'
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.6s ease-out',
+              'slide-up': 'slideUp 0.6s ease-out'
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(40px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .glass-effect {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .glass-card {
+        backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, #F59E0B, #D97706, #B45309);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero-gradient {
+        background: linear-gradient(135deg, rgba(254, 252, 247, 0.9), rgba(253, 248, 237, 0.8), rgba(251, 240, 214, 0.7));
+      }
+      .faq-item {
+        transition: all 0.3s ease;
+      }
+      .faq-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      .faq-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        opacity: 0;
+        padding: 0;
+        margin: 0;
+        transform: translateY(-10px);
+      }
+      .faq-content.active {
+        max-height: 500px;
+        opacity: 1;
+        padding: 0 24px 16px 24px;
+        margin: 0;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a href="/" class="text-2xl font-display font-bold gradient-text">
+              Butik
+            </a>
+          </div>
+          
+          <!-- Navigation -->
+          <nav class="hidden md:flex items-center space-x-8">
+            <a href="/" class="text-gray-600 hover:text-gold-600 transition-colors duration-200">Ana Sayfa</a>
+            <a href="/category" class="text-gray-600 hover:text-gold-600 transition-colors duration-200">Tüm Kategoriler</a>
+            <a href="/faq" class="text-gold-600 font-medium">SSS</a>
+          </nav>
+          
+          <!-- Mobile menu button -->
+          <button class="md:hidden p-2 rounded-md text-gray-600 hover:text-gold-600 hover:bg-gray-100 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-20 lg:py-32">
+      <div class="absolute inset-0 hero-gradient"></div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="animate-fade-in">
+          <h1 class="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-gray-800 mb-6">
+            Sıkça Sorulan <span class="gradient-text">Sorular</span>
+          </h1>
+          <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Merak ettiğiniz tüm soruların cevaplarını burada bulabilirsiniz
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Breadcrumb -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <nav class="flex items-center gap-2 text-sm text-gray-600">
+        <a href="/" class="hover:text-gray-800 transition-colors duration-200">Ana Sayfa</a>
+        <span>/</span>
+        <span class="text-gray-800 font-medium">Sıkça Sorulan Sorular</span>
+      </nav>
+    </section>
+
+    <!-- FAQ Content -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <!-- Sipariş ve İletişim -->
+      <div class="mb-12" id="shipping">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          📱 Sipariş ve İletişim
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Nasıl sipariş verebilirim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Sipariş vermek için WhatsApp hattımıza ürün adını, beden/renk tercihinizi ve teslimat adresinizi yazmanız yeterli. Müşteri temsilcimiz size yardımcı olacaktır.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Sipariş takibi nasıl yapılır?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Siparişiniz kargoya verildikten sonra size kargo takip kodunu WhatsApp üzerinden göndeririz. Bu kod ile kargo firmasının web sitesinden siparişinizi takip edebilirsiniz.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Hangi ödeme yöntemlerini kabul ediyorsunuz?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Kapıda ödeme, havale/EFT ve kredi kartı ile ödeme seçeneklerini sunuyoruz. WhatsApp üzerinden ödeme detaylarını konuşabiliriz.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Kargo ne kadar sürer?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Siparişiniz onaylandıktan sonra 1-2 iş günü içerisinde kargoya verilir. Kargo firmasına teslim edildikten sonra 1-3 iş günü içerisinde adresinize teslim edilir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- İade ve Değişim -->
+      <div class="mb-12" id="returns">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          🔄 İade ve Değişim
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">İade işlemi nasıl yapılır?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                İade yapmak istediğinizde WhatsApp hattımıza ürün fotoğrafı ve iade sebebini yazmanız yeterli. Müşteri temsilcimiz size yardımcı olacak ve iade sürecini başlatacaktır.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Hangi ürünler iade edilemez?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                İç çamaşırı, mayo, kişisel bakım ürünleri gibi sağlık ve hijyen nedeniyle iade edilemez. Ayrıca özel sipariş üzerine üretilen ürünler de iade kapsamında değildir.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Beden/renk değişimi yapabilir miyim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Evet, beden veya renk değişimi için WhatsApp hattımıza yazabilirsiniz. Stokta bulunan ürünlerle değişim yapılabilir. Değişim kargo ücreti müşteri tarafından karşılanır.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">İade süresi ne kadar?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Ürünlerinizi teslim aldığınız tarihten itibaren 14 gün içerisinde iade edebilirsiniz. Bu süre içerisinde ürünün kullanılmamış ve orijinal paketinde olması gerekir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ürün ve Sipariş -->
+      <div class="mb-12">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          🛍️ Ürün ve Sipariş
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Stokta olmayan ürünler için ne yapabilirim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Stokta olmayan ürünler için WhatsApp hattımıza "Stok Bildirimi" yazabilirsiniz. Ürün tekrar stokta olduğunda size bilgi veririz.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Ürün fotoğrafları gerçek mi?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Evet, tüm ürün fotoğrafları profesyonel stüdyo ortamında çekilmiştir. Ürünlerin gerçek görünümünü yansıtır ve renk tonları doğru şekilde gösterilir.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Özel sipariş verebilir miyim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Evet, özel siparişler için WhatsApp hattımıza detayları yazabilirsiniz. Müşteri temsilcimiz size özel fiyat ve teslimat süresi hakkında bilgi verecektir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ürün ve Sipariş -->
+      <div class="mb-12">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          🛍️ Ürün ve Sipariş
+        </h2>
+        
+        <div class="space-y-4">
+
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Siparişimi nasıl takip edebilirim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Siparişiniz kargoya verildikten sonra size SMS ve e-posta ile kargo takip numarası gönderilir. Bu numara ile kargo firmasının web sitesinden takip yapabilirsiniz.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Ürün fotoğrafları gerçek mi?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Evet, tüm ürün fotoğrafları profesyonel stüdyo ortamında çekilmiştir. Ürünlerin gerçek görünümünü yansıtır ve renk tonları doğru şekilde gösterilir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- İletişim -->
+      <div class="mb-12" id="contact">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          📞 İletişim
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Size nasıl ulaşabilirim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                WhatsApp hattımızdan bize ulaşabilirsiniz. Müşteri temsilcimiz size yardımcı olacaktır. Hafta içi 09:00-18:00 saatleri arasında hizmet vermekteyiz.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Şikayet ve önerilerimi nasıl iletebilirim?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Şikayet ve önerilerinizi WhatsApp hattımıza yazabilirsiniz. Müşteri temsilcimiz en kısa sürede size dönüş yapacaktır.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gizlilik Politikası -->
+      <div class="mb-12" id="privacy">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          🔒 Gizlilik Politikası
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Kişisel bilgilerim nasıl korunuyor?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                WhatsApp üzerinden paylaştığınız bilgiler sadece sipariş işlemleri için kullanılır. Üçüncü taraflarla paylaşılmaz ve güvenli şekilde saklanır.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Çerezler nasıl kullanılıyor?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Çerezler sadece site deneyimini iyileştirmek için kullanılır. Tarayıcı ayarlarınızdan çerezleri silebilirsiniz.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kullanım Şartları -->
+      <div class="mb-12" id="terms">
+        <h2 class="text-3xl font-display font-bold text-gray-800 mb-8 text-center">
+          📋 Kullanım Şartları
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Site kullanım koşulları nelerdir?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Sitemizi kullanarak bu şartları kabul etmiş sayılırsınız. Site içeriğini kopyalamak, değiştirmek veya ticari amaçla kullanmak yasaktır.
+              </p>
+            </div>
+          </div>
+          
+          <div class="faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button class="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200" onclick="toggleFaq(this)">
+              <span class="font-semibold text-gray-800">Sipariş güvenliği nasıl sağlanır?</span>
+              <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div class="faq-content">
+              <p class="text-gray-600 leading-relaxed">
+                Sipariş bilgilerinizi kimseyle paylaşmayın. WhatsApp üzerinden verdiğiniz bilgiler güvenli şekilde saklanır. Şüpheli durumlarda hemen bizimle iletişime geçin.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- İletişim Bilgileri -->
+      <div class="bg-gradient-to-br from-champagne-50 to-pastel-pink/30 rounded-3xl p-8 text-center">
+        <h3 class="text-2xl font-display font-bold text-gray-800 mb-4">Hala sorunuz mu var?</h3>
+        <p class="text-gray-600 mb-6">Bize ulaşın, size yardımcı olmaktan mutluluk duyarız!</p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a href="https://wa.me/905555555555" target="_blank" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.87 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+            </svg>
+            WhatsApp ile İletişim
+          </a>
+          
+          <a href="tel:+905551234567" class="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-600 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+            Telefon ile Ara
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gradient-to-br from-champagne-50 to-pastel-pink/30 border-t border-champagne-200/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            © 2024 Butik Mağaza. Tüm hakları saklıdır.
+          </p>
+          <div class="mt-4">
+            <a href="/" class="text-gold-600 hover:text-gold-700 transition-colors duration-200 mx-2">Ana Sayfa</a>
+            <a href="/category" class="text-gold-600 hover:text-gold-700 transition-colors duration-200 mx-2">Tüm Kategoriler</a>
+            <a href="/faq" class="text-gold-600 hover:text-gold-700 transition-colors duration-200 mx-2">SSS</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- WhatsApp Float Button -->
+    <div class="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
+      <a 
+        href="https://wa.me/905555555555" 
+        target="_blank" 
+        class="bg-green-500 hover:bg-green-600 text-white p-4 md:p-5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+        title="WhatsApp ile iletişim"
+      >
+        <svg class="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.87 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+        </svg>
+      </a>
+    </div>
+
+    <script>
+      // FAQ toggle fonksiyonu
+      function toggleFaq(button) {
+        const content = button.nextElementSibling;
+        const icon = button.querySelector('svg');
+        
+        // Diğer tüm açık FAQ'ları kapat
+        document.querySelectorAll('.faq-content').forEach(item => {
+          if (item !== content) {
+            item.classList.remove('active');
+            item.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+          }
+        });
+        
+        // Tıklanan FAQ'yı aç/kapat
+        content.classList.toggle('active');
+        icon.classList.toggle('rotate-180');
+      }
+      
+      // Smooth scroll için anchor linkleri yakala
+      document.addEventListener('DOMContentLoaded', () => {
+        // Anchor linklerini yakala
+        const anchorLinks = document.querySelectorAll('a[href^="#"]');
+        anchorLinks.forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+              const headerHeight = 80; // Header yüksekliği
+              const targetPosition = targetElement.offsetTop - headerHeight;
+              
+              window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+              });
+            }
+          });
+        });
+        
+        // URL'de anchor varsa o bölüme scroll yap
+        if (window.location.hash) {
+          setTimeout(() => {
+            const targetId = window.location.hash.substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+              const headerHeight = 80;
+              const targetPosition = targetElement.offsetTop - headerHeight;
+              
+              window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+              });
+            }
+          }, 100);
+        }
+        
+        try {
+          // Config'den WhatsApp numarasını al
+          const num = window.APP_CONFIG?.WHATSAPP_NUMBER || '905555555555';
+          
+          // WhatsApp butonlarını güncelle
+          const whatsappButtons = document.querySelectorAll('a[href*="wa.me"]');
+          whatsappButtons.forEach(button => {
+            button.href = `https://wa.me/${num}`;
+          });
+          
+          // Telefon butonunu güncelle
+          const phoneButtons = document.querySelectorAll('a[href*="tel:"]');
+          phoneButtons.forEach(button => {
+            button.href = `tel:+90${num}`;
+          });
+          
+        } catch (error) {
+          console.error('WhatsApp numarası güncellenirken hata:', error);
+        }
+      });
+    </script>
+  </body>
+</html>

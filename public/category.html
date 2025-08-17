@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title id="pageTitle">Kategori - Butik Mağaza</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
+              display: ['Playfair Display', 'serif']
+            },
+            colors: {
+              champagne: {
+                50: '#FEFCF7',
+                100: '#FDF8ED',
+                200: '#FBF0D6',
+                300: '#F8E4B8',
+                400: '#F4D494',
+                500: '#F0C270',
+                600: '#E8A94A',
+                700: '#D18F2E',
+                800: '#A87225',
+                900: '#8A5F22'
+              },
+              gold: {
+                50: '#FFFBEB',
+                100: '#FEF3C7',
+                200: '#FDE68A',
+                300: '#FCD34D',
+                400: '#FBBF24',
+                500: '#F59E0B',
+                600: '#D97706',
+                700: '#B45309',
+                800: '#92400E',
+                900: '#78350F'
+              },
+              pastel: {
+                pink: '#FCE7F3',
+                lavender: '#F3E8FF',
+                blue: '#DBEAFE',
+                green: '#D1FAE5',
+                yellow: '#FEF3C7'
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.6s ease-out',
+              'slide-up': 'slideUp 0.6s ease-out'
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(40px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .glass-effect {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .glass-card {
+        backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, #F59E0B, #D97706, #B45309);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero-gradient {
+        background: linear-gradient(135deg, rgba(254, 252, 247, 0.9), rgba(253, 248, 237, 0.8), rgba(251, 240, 214, 0.7));
+      }
+      .product-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+      .whatsapp-float {
+        animation: float 3s ease-in-out infinite;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      /* Kategori kartları için cursor pointer */
+      .category-card {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-champagne-50 via-pastel-pink to-pastel-lavender min-h-screen">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50 border-b border-white/20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo -->
+          <a href="/" class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center">
+              <span class="text-white font-display font-bold text-xl">B</span>
+            </div>
+            <span class="text-2xl font-display font-semibold gradient-text">Butik</span>
+          </a>
+
+          <!-- Search Bar - Desktop -->
+          <div class="hidden md:flex flex-1 max-w-md mx-8">
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                id="searchInput"
+                placeholder="Ürün ara..." 
+                class="w-full px-4 py-2 pl-10 glass-card rounded-xl border-0 focus:ring-2 focus:ring-gold-400 focus:outline-none transition-all duration-300"
+              >
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Side - Desktop -->
+          <div class="hidden md:flex items-center space-x-4">
+            <a href="/admin/login.html" class="text-gray-700 hover:text-gold-600 transition-colors duration-200 font-medium">
+              Admin
+            </a>
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <div class="md:hidden flex items-center space-x-3">
+            <button id="mobileMenuBtn" class="p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-white/20 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Search Bar -->
+        <div id="mobileSearch" class="md:hidden pb-4 hidden">
+          <div class="relative w-full">
+            <input 
+              type="text" 
+              id="mobileSearchInput"
+              placeholder="Ürün ara..." 
+              class="w-full px-4 py-2 pl-10 glass-card rounded-xl border-0 focus:ring-2 focus:ring-gold-400 focus:outline-none transition-all duration-300"
+            >
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="md:hidden fixed inset-0 z-40 bg-black/50 hidden">
+      <div class="bg-white h-full w-80 max-w-[80vw] shadow-xl transform transition-transform duration-300">
+        <div class="flex items-center justify-between p-4 border-b">
+          <span class="text-lg font-semibold text-gray-800">Menü</span>
+          <button id="closeMobileMenu" class="p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="p-4 space-y-4">
+          <a href="/" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
+            Ana Sayfa
+          </a>
+          <a href="#products" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
+            Ürünler
+          </a>
+          <div class="border-t pt-4">
+            <a href="/admin/login.html" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
+              Admin Giriş
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-20 lg:py-32">
+      <div class="absolute inset-0 bg-gradient-to-br from-champagne-100/50 to-pastel-pink/30"></div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="animate-fade-in">
+          <h1 id="categoryTitle" class="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-gray-800 mb-6">
+            <span class="gradient-text">Kategori Yükleniyor...</span>
+          </h1>
+          <p id="categoryDescription" class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Seçkin parçalar ve zarif tasarımlar
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Breadcrumb -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <nav class="flex items-center gap-2 text-sm text-gray-600">
+        <a href="/" class="hover:text-gray-800 transition-colors duration-200">Ana Sayfa</a>
+        <span>/</span>
+        <span id="breadcrumbCategory" class="text-gray-800 font-medium">Kategori Yükleniyor...</span>
+      </nav>
+    </section>
+
+    <!-- Products Section -->
+    <section id="products" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+          <h2 id="productsTitle" class="text-2xl font-display font-semibold text-gray-800">Ürünler Yükleniyor...</h2>
+          <span id="productCount" class="text-gray-600">(0 ürün)</span>
+        </div>
+        <a href="/" class="px-6 py-3 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gold-400 transition-all duration-300">
+          ← Ana Sayfaya Dön
+        </a>
+      </div>
+
+      <div id="productsContainer" class="grid gap-4 sm:gap-6" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <!-- Products will be loaded here -->
+      </div>
+    </section>
+
+    <!-- WhatsApp Float Button -->
+    <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+      <a 
+        href="https://wa.me/905555555555" 
+        target="_blank" 
+        class="whatsapp-float bg-green-500 hover:bg-green-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+        title="WhatsApp ile iletişim"
+      >
+        <svg class="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-6.33 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script>
+      // Basit kategori ürün listeleme
+      document.addEventListener('DOMContentLoaded', async () => {
+        const params = new URLSearchParams(window.location.search);
+        const categoryId = params.get('id');
+        const productsContainer = document.getElementById('productsContainer');
+        const productCount = document.getElementById('productCount');
+        const productsTitle = document.getElementById('productsTitle');
+        const breadcrumbCategory = document.getElementById('breadcrumbCategory');
+
+        if (!categoryId) {
+          // Kategori ID yoksa tüm kategorileri göster
+          showAllCategories();
+          return;
+        }
+
+        try {
+          // Kampanya verilerini yükle
+          await loadCampaigns();
+          
+          const catRes = await fetch(`/api/categories/${categoryId}`);
+          if (catRes.ok) {
+            const cat = await catRes.json();
+            breadcrumbCategory.textContent = cat.name;
+            // Eğer kategori adı zaten "Ürünler" ise tekrar ekleme
+            if (cat.name === 'Ürünler') {
+              productsTitle.textContent = 'Ürünler';
+            } else {
+              productsTitle.textContent = `${cat.name} Ürünleri`;
+            }
+            document.getElementById('categoryTitle').innerHTML = `<span class="gradient-text">${cat.name}</span>`;
+            
+            // Kategori açıklamasını güncelle
+            const categoryDescription = document.getElementById('categoryDescription');
+            if (categoryDescription) {
+              if (cat.name === 'Ürünler') {
+                categoryDescription.textContent = 'Koleksiyonumuzdaki seçkin parçalar ve zarif tasarımlar';
+              } else {
+                categoryDescription.textContent = `${cat.name} kategorisindeki seçkin parçalar ve zarif tasarımlar`;
+              }
+            }
+            
+            // Sayfa başlığını da güncelle
+            document.getElementById('pageTitle').textContent = `${cat.name} - Butik Mağaza`;
+          }
+
+          const res = await fetch(`/api/products?categoryId=${categoryId}`);
+          if (!res.ok) throw new Error('Ürünler alınamadı');
+          const products = await res.json();
+          productCount.textContent = `(${products.length} ürün)`;
+
+          if (!products.length) {
+            productsContainer.innerHTML = '<p class="text-gray-500">Bu kategoride ürün bulunmuyor.</p>';
+            return;
+          }
+
+          productsContainer.innerHTML = products.map(p => `
+            <div class="group relative bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden">
+              <div class="aspect-[4/3] overflow-hidden relative">
+                <img src="${p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                
+                <!-- Kampanya İndirim Badge'i -->
+                ${getProductCampaignBadge(p)}
+              </div>
+              <div class="p-4">
+                <h3 class="font-semibold text-gray-800 mb-2 group-hover:text-gold-600 transition-colors">${p.name}</h3>
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col items-start">
+                    ${getProductPriceWithCampaign(p)}
+                  </div>
+                  <button onclick="window.location.href='/product/${p._id}'" class="text-sm text-gray-600 hover:text-gold-600">Detaylar →</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } catch (e) {
+          productsContainer.innerHTML = `<p class="text-red-600">Hata: ${e.message}</p>`;
+        }
+      });
+
+      // Tüm kategorileri göster
+      async function showAllCategories() {
+        try {
+          // Sayfa başlığını güncelle
+          document.getElementById('pageTitle').textContent = 'Kategoriler - Butik Mağaza';
+          document.getElementById('categoryTitle').innerHTML = '<span class="gradient-text">Tüm Kategoriler</span>';
+          document.getElementById('categoryDescription').textContent = 'Koleksiyonumuzdaki tüm kategorileri keşfedin';
+          document.getElementById('breadcrumbCategory').textContent = 'Kategoriler';
+          document.getElementById('productsTitle').textContent = 'Kategoriler';
+          document.getElementById('productCount').textContent = '';
+          
+          // Kategorileri yükle
+          const categoriesRes = await fetch('/api/categories');
+          if (categoriesRes.ok) {
+            const categories = await categoriesRes.json();
+            
+            // Kategori kartlarını göster
+            productsContainer.innerHTML = `
+              <div class="grid gap-6 md:gap-8" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                ${categories.map(category => `
+                  <a href="/category?id=${category._id}" class="group relative bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 block hover:scale-105 transform">
+                    <div class="aspect-[4/3] overflow-hidden relative">
+                      <img src="${category.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" alt="${category.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      
+                      <!-- Kategori Badge'i -->
+                      <div class="absolute top-2 left-2 px-2 py-1 rounded-lg bg-accent-500 text-white font-bold text-xs shadow-lg">
+                        Kategori
+                      </div>
+                    </div>
+                    <div class="p-4">
+                      <h3 class="font-semibold text-gray-800 mb-2 group-hover:text-accent-600 transition-colors">${category.name}</h3>
+                      <p class="text-sm text-gray-600 mb-3">${category.description || 'Özel tasarım koleksiyonu'}</p>
+                      <div class="flex items-center justify-center">
+                        <span class="text-sm text-accent-600 font-medium group-hover:text-accent-700 transition-colors">Ürünleri görüntüle →</span>
+                      </div>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            productsContainer.innerHTML = '<p class="text-red-600">Kategoriler yüklenirken hata oluştu.</p>';
+          }
+        } catch (error) {
+          console.error('Kategoriler yüklenirken hata:', error);
+          productsContainer.innerHTML = '<p class="text-red-600">Kategoriler yüklenirken hata oluştu.</p>';
+        }
+      }
+
+      // Kampanya verilerini yükle
+      async function loadCampaigns() {
+        try {
+          const campaigns = await fetch('/api/campaigns');
+          const campaignsData = await campaigns.json();
+          
+          // Aktif kampanyaları global olarak sakla
+          window.activeCampaigns = campaignsData.filter(campaign => campaign.isActive);
+          
+          console.log('✅ Kampanya verileri yüklendi:', window.activeCampaigns.length);
+        } catch (error) {
+          console.error('❌ Kampanya verileri yüklenirken hata:', error);
+          window.activeCampaigns = [];
+        }
+      }
+
+      // Kampanya indirim badge'ini oluştur
+      function getProductCampaignBadge(product) {
+        if (window.activeCampaigns && Array.isArray(window.activeCampaigns)) {
+          let campaignDiscount = 0;
+          
+          // Aktif kampanyalardan bu ürün için en yüksek indirimi bul
+          window.activeCampaigns.forEach(campaign => {
+            if (campaign.isActive && campaign.discount > 0) {
+              // Ürün bazlı kampanya kontrolü
+              if (campaign.type === 'products' && campaign.productIds && campaign.productIds.some(p => p._id === product._id)) {
+                if (campaign.discount > campaignDiscount) {
+                  campaignDiscount = campaign.discount;
+                }
+              }
+              // Kategori bazlı kampanya kontrolü
+              else if (campaign.type === 'category' && campaign.targetId && product.categoryId && product.categoryId._id === campaign.targetId._id) {
+                if (campaign.discount > campaignDiscount) {
+                  campaignDiscount = campaign.discount;
+                }
+              }
+            }
+          });
+          
+          if (campaignDiscount > 0) {
+            return `<div class="absolute top-2 left-2 px-2 py-1 rounded-lg bg-red-500 text-white font-bold text-xs shadow-lg">%${campaignDiscount} İndirim</div>`;
+          }
+        }
+        return '';
+      }
+
+      // Kampanya fiyatını hesapla
+      function getProductPriceWithCampaign(product) {
+        if (window.activeCampaigns && Array.isArray(window.activeCampaigns)) {
+          let campaignDiscount = 0;
+          
+          // Aktif kampanyalardan bu ürün için en yüksek indirimi bul
+          window.activeCampaigns.forEach(campaign => {
+            if (campaign.isActive && campaign.discount > 0) {
+              // Ürün bazlı kampanya kontrolü
+              if (campaign.type === 'products' && campaign.productIds && campaign.productIds.some(p => p._id === product._id)) {
+                if (campaign.discount > campaignDiscount) {
+                  campaignDiscount = campaign.discount;
+                }
+              }
+              // Kategori bazlı kampanya kontrolü
+              else if (campaign.type === 'category' && campaign.targetId && product.categoryId && product.categoryId._id === campaign.targetId._id) {
+                if (campaign.discount > campaignDiscount) {
+                  campaignDiscount = campaign.discount;
+                }
+              }
+            }
+          });
+          
+          // İndirimli fiyatı hesapla
+          if (campaignDiscount > 0) {
+            const discountedPrice = Math.round(product.price * (1 - campaignDiscount / 100));
+            return `
+              <span class="text-lg font-bold text-red-600">₺${discountedPrice}</span>
+              <span class="text-sm text-gray-500 line-through">₺${product.price}</span>
+              <span class="text-xs text-red-500 bg-red-100 px-1 py-0.5 rounded-full">%${campaignDiscount}</span>
+            `;
+          }
+        }
+        
+        // Kampanya yoksa normal fiyatı göster
+        return `<span class="text-lg font-bold text-gold-600">₺${product.price}</span>`;
+      }
+    </script>
+    <script>
+      // Mobile Menu Functions
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const closeMobileMenu = document.getElementById('closeMobileMenu');
+      const mobileSearch = document.getElementById('mobileSearch');
+
+      // Toggle mobile menu
+      mobileMenuBtn?.addEventListener('click', () => {
+        mobileMenu.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      });
+
+      // Close mobile menu
+      closeMobileMenu?.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        document.body.style.overflow = '';
+      });
+
+      // Close mobile menu when clicking outside
+      mobileMenu?.addEventListener('click', (e) => {
+        if (e.target === mobileMenu) {
+          mobileMenu.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+      });
+
+      // Toggle mobile search
+      mobileMenuBtn?.addEventListener('click', () => {
+        mobileSearch.classList.toggle('hidden');
+      });
+    </script>
+  </body>
+</html> 
