@@ -177,6 +177,7 @@
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.25);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 400px;
       }
       
       .category-card img {
@@ -185,9 +186,9 @@
         object-fit: cover;
       }
       .category-card:hover {
-        transform: translateY(-12px) scale(1.03);
-        box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.12);
-        border-color: rgba(242, 168, 64, 0.3);
+        transform: translateY(-16px) scale(1.05);
+        box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.15);
+        border-color: rgba(242, 168, 64, 0.4);
       }
       .product-card {
         background: rgba(255, 255, 255, 0.95);
@@ -197,6 +198,31 @@
       /* Kategori kartları için cursor pointer */
       .category-card {
         cursor: pointer;
+      }
+      
+      /* Responsive kategori kartları */
+      @media (max-width: 640px) {
+        .category-card {
+          min-height: 350px;
+        }
+        #categoriesGrid {
+          grid-template-columns: repeat(1, 1fr);
+        }
+      }
+      
+      @media (min-width: 641px) and (max-width: 1024px) {
+        .category-card {
+          min-height: 380px;
+        }
+        #categoriesGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (min-width: 1025px) {
+        #categoriesGrid {
+          grid-template-columns: repeat(3, 1fr);
+        }
       }
       
       /* Kategori linkleri için ek stiller */
@@ -235,6 +261,7 @@
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.25);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 400px;
       }
       
       .product-card img {
@@ -673,7 +700,7 @@
         </div>
 
         <!-- Categories Grid -->
-        <div id="categoriesGrid" class="grid gap-4 sm:gap-6 md:gap-8 lg:gap-10 auto-rows-fr" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div id="categoriesGrid" class="grid gap-6 sm:gap-8 md:gap-10 lg:gap-12 auto-rows-fr" style="grid-template-columns: repeat(3, 1fr);">
           <!-- Categories will be loaded here -->
         </div>
 

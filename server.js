@@ -171,6 +171,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Sayfa bulunamadı' });
 });
 
+//----------------------------------------------------------
 const PORT = process.env.PORT || 3000;
 
 // Start server after DB connection

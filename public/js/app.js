@@ -42,13 +42,13 @@ const createCategoryCard = (category) => {
   
   return `
     <a href="/category?id=${category._id}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left category-card bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60 block hover:scale-105 transform" data-category-id="${category._id}">
-      <div class="overflow-hidden relative aspect-[5/6]">
+      <div class="overflow-hidden relative aspect-[4/5]">
         <img src="${img}" alt="${category.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         
         <!-- Category Icon -->
-        <div class="absolute top-2 left-2 w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <div class="absolute top-3 left-3 w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           </svg>
         </div>
@@ -57,17 +57,17 @@ const createCategoryCard = (category) => {
         <div class="absolute inset-0 bg-gradient-to-t from-accent-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       </div>
       
-      <div class="p-3 sm:p-4 text-center">
-        <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-1 group-hover:text-accent-600 transition-colors duration-300">
+      <div class="p-4 sm:p-5 text-center">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 group-hover:text-accent-600 transition-colors duration-300">
           ${category.name}
         </h3>
-        <p class="text-xs sm:text-sm text-gray-600 mb-2 hidden sm:block">
+        <p class="text-sm sm:text-base text-gray-600 mb-3 hidden sm:block">
           ${category.description || 'Özel tasarım koleksiyonu'}
         </p>
         
-        <div class="flex items-center justify-center gap-1 text-accent-600 font-medium text-xs sm:text-sm">
+        <div class="flex items-center justify-center gap-2 text-accent-600 font-medium text-sm sm:text-base">
           <span>Ürünleri Keşfet</span>
-          <svg class="w-3 h-3 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
           </svg>
         </div>
