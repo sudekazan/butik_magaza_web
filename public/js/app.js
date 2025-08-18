@@ -225,9 +225,9 @@ const createProductCard = (product, isPanel = false) => {
             </div>
           ` : `
             <!-- Normal fiyat -->
-            <div class="text-xs sm:text-sm md:text-lg font-bold text-accent-600">
-              ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
-            </div>
+          <div class="text-xs sm:text-sm md:text-lg font-bold text-accent-600">
+            ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+          </div>
           `}
         </div>
         
@@ -385,7 +385,7 @@ const renderProducts = (products, isPanel = false) => {
   console.log('🎨 renderProducts çağrıldı:', { productsCount: products.length, isPanel });
   
   // Ana ürünler grid'ini bul - isPanel false ise ana sayfadaki productsGrid'i kullan
-  const targetGrid = isPanel ? document.getElementById('productsGrid') : document.getElementById('productsGrid');
+  const targetGrid = isPanel ? document.getElementById('panelProductsGrid') : document.getElementById('productsGrid');
   
   if (!targetGrid) {
     console.error('❌ Ürün grid bulunamadı! productsGrid ID\'li element yok!');
@@ -454,26 +454,20 @@ const loadMobileCategories = async () => {
   }
 };
 
-const fetchAndRenderProducts = async (query = '', isPanel = false, categoryName = null) => {
+const fetchAndRenderProducts = async (query = '', isPanel = false, categoryId = null) => {
   try {
     let url = '/api/products';
     const params = new URLSearchParams();
     
     if (query) params.set('q', query);
     
-    // Eğer kategori adı verilmişse, o kategoriye göre filtrele
-    if (categoryName) {
-      // Önce tüm ürünleri al, sonra JavaScript'te filtrele
-      const allProducts = await fetchJSON('/api/products');
-      const filteredProducts = allProducts.filter(product => {
-        return product.categoryId && product.categoryId.name === categoryName;
-      });
-      renderProducts(filteredProducts, isPanel);
-      return;
+    // Eğer kategori ID verilmişse, o kategoriye göre filtrele
+    if (categoryId) {
+      params.set('categoryId', categoryId);
+    } else if (selectedCategoryId) {
+      // Seçili kategori varsa onu kullan
+      params.set('categoryId', selectedCategoryId);
     }
-    
-    // Normal kategori ID ile filtreleme
-    if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
     
     if (params.toString()) {
       url += `?${params.toString()}`;
@@ -495,7 +489,7 @@ const fetchAndRenderProducts = async (query = '', isPanel = false, categoryName 
   } catch (e) {
     console.error('❌ Ürünler yüklenirken hata:', e);
     if (isPanel) {
-      showError(e.message, 'productsPanel');
+      showError(e.message, 'panelProductsGrid');
     } else {
       showError(e.message, 'productsGrid');
     }
@@ -548,10 +542,6 @@ const selectCategory = (id, title) => {
 };
 
 const selectMobileCategory = (id, title) => {
-  selectedCategoryId = id;
-  selectedCategoryTitle = title;
-  isShowingAllProducts = false;
-  
   // Mobil kategoriler panelini kapat
   const mobileCategoriesPanel = document.getElementById('mobileCategoriesPanel');
   if (mobileCategoriesPanel) {
@@ -559,32 +549,8 @@ const selectMobileCategory = (id, title) => {
     document.body.style.overflow = '';
   }
   
-  // Mobil ürünler bölümünü göster
-  const mobileProductsSection = document.getElementById('mobileProductsSection');
-  if (mobileProductsSection) {
-    mobileProductsSection.classList.remove('hidden');
-  }
-  
-  // Mobil ürünler başlığını güncelle
-  const mobileProductsTitle = document.getElementById('mobileProductsTitle');
-  if (mobileProductsTitle) {
-    mobileProductsTitle.innerHTML = `<span class="gradient-text">${title}</span> Ürünleri`;
-  }
-  
-  // Geri dön butonunu göster
-  const backToCategoriesBtnMobile = document.getElementById('backToCategoriesBtnMobile');
-  if (backToCategoriesBtnMobile) {
-    backToCategoriesBtnMobile.classList.remove('hidden');
-  }
-  
-  // Ürünleri yükle
-  fetchAndRenderMobileProducts();
-  
-  // Ana ürünler bölümünde de kategori ürünlerini göster
-  fetchAndRenderProducts('', false, id);
-  
-  // Seçilen kategoriyi vurgula
-  updateCategorySelection(id);
+  // Kategori sayfasına yönlendir
+  window.location.href = `/category?id=${id}`;
 };
 
 const showAllProducts = () => {
@@ -625,8 +591,8 @@ const showAllProducts = () => {
     backToCategoriesBtnMobile.classList.add('hidden');
   }
   
-  // Tum urunleri yukle
-  fetchAndRenderProducts();
+  // Tum urunleri yukle (kategori filtresi olmadan)
+  fetchAndRenderProducts('', false, null);
 };
 
 const backToCategories = () => {
@@ -823,13 +789,11 @@ document.addEventListener('click', (e) => {
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   // Başlangıç durumunu ayarla
-  showAllProducts();
+  // Ana sayfada ürün gösterimi kaldırıldı
   
   // Kategorileri ve ürünleri yükle
   await Promise.all([
-    fetchAndRenderCategories(), 
-    fetchAndRenderProducts(),
-    loadFeaturedProducts()
+    fetchAndRenderCategories()
   ]);
   
   // Masaüstü kategoriler menüsünü yükle
@@ -912,7 +876,7 @@ panelSearchInput?.addEventListener('input', (e) => {
 const fetchAndRenderPanelProducts = async (query) => {
   try {
     // Loading state'i göster
-    const panelGrid = document.getElementById('productsGrid');
+    const panelGrid = document.getElementById('panelProductsGrid');
     if (panelGrid) {
       panelGrid.innerHTML = `
         <div class="text-center py-12">
@@ -939,7 +903,7 @@ const fetchAndRenderPanelProducts = async (query) => {
 
 // Panel ürünlerini render et
 const renderPanelProducts = (products, query) => {
-  const panelGrid = document.getElementById('productsGrid');
+  const panelGrid = document.getElementById('panelProductsGrid');
   const productsCount = document.getElementById('productsCount');
   
   if (!panelGrid) return;
@@ -2228,6 +2192,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCampaignFilterButtons();
   // loadFeaturedProducts() zaten ana sayfa yüklendiğinde çağrılıyor, burada tekrar çağırmaya gerek yok
 });
+
+// Global fonksiyonları window objesine ekle
+window.showAllProducts = showAllProducts;
+window.selectMobileCategory = selectMobileCategory;
 
 
 

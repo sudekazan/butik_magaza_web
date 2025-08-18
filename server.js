@@ -13,6 +13,7 @@ import productRoutes from './src/routes/products.js';
 import campaignRoutes from './src/routes/campaigns.js';
 import featuredProductRoutes from './src/routes/featuredProducts.js';
 import Product from './src/models/Product.js';
+import Category from './src/models/Category.js';
 
 dotenv.config();
 const app = express();
@@ -77,6 +78,19 @@ app.get('/category.html', (req, res) => {
 
 app.get('/faq', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'faq.html'));
+});
+
+// Pretty category slugs: "/elbise", "/tunik" gibi URL'leri kategori sayfasına yönlendir
+app.get('/:slug', async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const reserved = new Set(['api', 'admin', 'uploads', 'product', 'category', 'faq']);
+    if (!slug || reserved.has(slug) || slug.includes('.')) return next();
+    // Slug DB'de olsa da olmasa da kategori SPA sayfasını döndür; client slug'ı ID'ye çevirecek
+    return res.sendFile(path.join(__dirname, 'public', 'category.html'));
+  } catch (err) {
+    return next();
+  }
 });
 
 // Admin Panel Routes
@@ -171,7 +185,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Sayfa bulunamadı' });
 });
 
-//----------------------------------------------------------
+//------------------------------------------------------------------------------------------------
 const PORT = process.env.PORT || 3000;
 
 // Start server after DB connection

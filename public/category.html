@@ -110,6 +110,8 @@
       .category-card {
         cursor: pointer;
       }
+      
+
     </style>
   </head>
   <body class="bg-gradient-to-br from-champagne-50 via-pastel-pink to-pastel-lavender min-h-screen">
@@ -142,16 +144,9 @@
             </div>
           </div>
 
-          <!-- Right Side - Desktop -->
-          <div class="hidden md:flex items-center space-x-4">
-            <a href="/admin/login.html" class="text-gray-700 hover:text-gold-600 transition-colors duration-200 font-medium">
-              Admin
-            </a>
-          </div>
-
-          <!-- Mobile Menu Button -->
-          <div class="md:hidden flex items-center space-x-3">
-            <button id="mobileMenuBtn" class="p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-white/20 transition-colors">
+          <!-- Mobile Menu Button (3 çizgi) -->
+          <div class="md:hidden flex items-center">
+            <button id="mobileMenuBtn" onclick="document.getElementById('mobileMenu')?.classList.remove('hidden')" class="p-3 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-white/20 transition-colors duration-300">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
@@ -159,49 +154,82 @@
           </div>
         </div>
 
-        <!-- Mobile Search Bar -->
-        <div id="mobileSearch" class="md:hidden pb-4 hidden">
-          <div class="relative w-full">
-            <input 
-              type="text" 
-              id="mobileSearchInput"
-              placeholder="Ürün ara..." 
-              class="w-full px-4 py-2 pl-10 glass-card rounded-xl border-0 focus:ring-2 focus:ring-gold-400 focus:outline-none transition-all duration-300"
-            >
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
+
       </div>
     </header>
 
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="md:hidden fixed inset-0 z-40 bg-black/50 hidden">
-      <div class="bg-white h-full w-80 max-w-[80vw] shadow-xl transform transition-transform duration-300">
-        <div class="flex items-center justify-between p-4 border-b">
-          <span class="text-lg font-semibold text-gray-800">Menü</span>
-          <button id="closeMobileMenu" class="p-2 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-100">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    <!-- Mobile Menu for Category Page -->
+    <div id="mobileMenu" class="md:hidden fixed inset-0 z-50 bg-black/30 hidden">
+      <div class="bg-white/95 backdrop-blur-xl h-full w-80 max-w-[80vw] shadow-2xl transform transition-transform duration-400 ml-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+          <span class="text-xl font-semibold text-gray-800">Menü</span>
+          <button id="closeMobileMenu" class="p-2 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors duration-300">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
-        <div class="p-4 space-y-4">
-          <a href="/" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
-            Ana Sayfa
-          </a>
-          <a href="#products" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
-            Ürünler
-          </a>
-          <div class="border-t pt-4">
-            <a href="/admin/login.html" class="block py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gold-600 transition-colors">
-              Admin Giriş
-            </a>
+        <div class="p-6 space-y-4">
+          <a href="/" class="block py-4 px-5 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gold-600 transition-colors duration-300 text-lg">Ana Sayfa</a>
+          <div class="relative">
+            <button id="mobileCategoriesBtn" class="w-full text-left py-4 px-5 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gold-600 transition-colors duration-300 text-lg flex items-center justify-between">
+              <span>Kategoriler</span>
+              <svg id="categoriesArrow" class="w-5 h-5 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div id="mobileCategoriesDropdown" class="hidden pl-4 mt-2 space-y-2">
+              <!-- Kategoriler buraya yüklenecek -->
+            </div>
+          </div>
+          
+          <a href="/category" class="block py-4 px-5 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gold-600 transition-colors duration-300 text-lg">Ürünler</a>
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Categories Panel (opsiyonel) -->
+    <div id="mobileCategoriesPanel" class="md:hidden fixed inset-0 z-40 bg-black/30 hidden">
+      <div class="bg-white/95 backdrop-blur-xl h-full w-80 max-w-[80vw] shadow-2xl transform transition-transform duration-400 ml-auto">
+        <!-- Panel Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-champagne-100 to-pastel-pink/40">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-gold-500 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-800">Kategoriler</h3>
+          </div>
+          <button id="closeMobileCategoriesPanel" class="p-2 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors duration-300">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Categories List -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <div id="mobileCategoriesList" class="space-y-3">
+            <!-- Kategoriler buraya yüklenecek -->
           </div>
         </div>
+      </div>
+    </div>
+
+    
+
+    <!-- Active Campaign Banner (only if exists) -->
+    <div id="activeCampaignBar" class="hidden bg-gradient-to-r from-gold-100 to-pastel-pink/40 border-b border-champagne-200/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-gold-500 text-white flex items-center justify-center">%</div>
+          <div class="text-sm sm:text-base text-gray-800">
+            <span id="activeCampaignText" class="font-medium"></span>
+          </div>
+        </div>
+        <div class="text-gold-700 text-sm">Kampanyayı Gör →</div>
       </div>
     </div>
 
@@ -236,9 +264,11 @@
           <h2 id="productsTitle" class="text-2xl font-display font-semibold text-gray-800">Ürünler Yükleniyor...</h2>
           <span id="productCount" class="text-gray-600">(0 ürün)</span>
         </div>
-        <a href="/" class="px-6 py-3 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gold-400 transition-all duration-300">
-          ← Ana Sayfaya Dön
-        </a>
+        <div class="flex items-center gap-3">
+          <a href="/" class="px-6 py-3 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gold-400 transition-all duration-300">
+            ← Ana Sayfaya Dön
+          </a>
+        </div>
       </div>
 
       <div id="productsContainer" class="grid gap-4 sm:gap-6" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
@@ -246,10 +276,121 @@
       </div>
     </section>
 
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-br from-champagne-50 to-pastel-pink/30 border-t border-champagne-200/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          
+          <!-- İletişim Bilgileri -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">İletişim</h3>
+            <div class="space-y-3">
+              <div class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Telefon</p>
+                  <p class="text-sm text-gray-600">+90 555 123 45 67</p>
+                </div>
+              </div>
+              
+              <div class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">E-posta</p>
+                  <p class="text-sm text-gray-600">info@butikmagaza.com</p>
+                </div>
+              </div>
+              
+              <div class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Adres</p>
+                  <p class="text-sm text-gray-600">Atatürk Caddesi No:123<br>Merkez / İstanbul</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hızlı Linkler -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Hızlı Linkler</h3>
+            <div class="space-y-3">
+              <a href="/" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Ana Sayfa</a>
+              <a href="/category?view=categories" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Tüm Kategoriler</a>
+              <a href="/category?new=true" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Yeni Ürünler</a>
+              <a href="/category?discount=true" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">İndirimler</a>
+            </div>
+          </div>
+          
+          <!-- Müşteri Hizmetleri -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Müşteri Hizmetleri</h3>
+            <div class="space-y-3">
+              <a href="/faq" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Sıkça Sorulan Sorular</a>
+              <a href="/faq#shipping" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Kargo ve Teslimat</a>
+              <a href="/faq#returns" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">İade ve Değişim</a>
+              <a href="/faq#privacy" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Gizlilik Politikası</a>
+            </div>
+          </div>
+          
+          <!-- Sosyal Medya ve İletişim -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Bizi Takip Edin</h3>
+            <div class="space-y-3">
+              <a href="https://instagram.com/htm.moda" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">
+                <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-gold-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z"/>
+                  </svg>
+                </div>
+                <span>Instagram</span>
+              </a>
+            </div>
+            
+            <!-- WhatsApp İletişim -->
+            <div class="pt-4">
+              <a href="https://wa.me/905065668854" target="_blank" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                </svg>
+                WhatsApp ile İletişim
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Alt Bilgi -->
+        <div class="border-t border-champagne-200/50 mt-8 pt-8 text-center">
+          <p class="text-sm text-gray-600">
+            © 2024 Butik Mağaza. Tüm hakları saklıdır. | 
+            <a href="/faq#privacy" class="text-gold-600 hover:text-gold-700 transition-colors duration-200">Gizlilik Politikası</a> | 
+            <a href="/faq#terms" class="text-gold-600 hover:text-gold-700 transition-colors duration-200">Kullanım Şartları</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+
+
+
     <!-- WhatsApp Float Button -->
     <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
       <a 
-        href="https://wa.me/905555555555" 
+        id="whatsappButton"
+        href="https://wa.me/905065668854" 
         target="_blank" 
         class="whatsapp-float bg-green-500 hover:bg-green-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
         title="WhatsApp ile iletişim"
@@ -263,54 +404,205 @@
     <!-- Scripts -->
     <script src="/js/config.js"></script>
     <script>
+      // WhatsApp numarasını config'den al ve butonu güncelle
+      function updateWhatsAppNumber() {
+        try {
+          const whatsappButton = document.getElementById('whatsappButton');
+          const num = window.APP_CONFIG?.WHATSAPP_NUMBER || '905065668854';
+          if (whatsappButton) {
+            whatsappButton.href = `https://wa.me/${num}`;
+          }
+        } catch (error) {
+          console.error('WhatsApp numarası güncellenirken hata:', error);
+        }
+      }
+
       // Basit kategori ürün listeleme
       document.addEventListener('DOMContentLoaded', async () => {
         const params = new URLSearchParams(window.location.search);
-        const categoryId = params.get('id');
+        let categoryId = params.get('id');
+        const campaignId = params.get('campaignId');
+        const view = params.get('view');
         const productsContainer = document.getElementById('productsContainer');
         const productCount = document.getElementById('productCount');
         const productsTitle = document.getElementById('productsTitle');
         const breadcrumbCategory = document.getElementById('breadcrumbCategory');
 
-        if (!categoryId) {
-          // Kategori ID yoksa tüm kategorileri göster
-          showAllCategories();
-          return;
-        }
+        // Not: Kategori ve kampanya yoksa artık tüm ürünleri listeleyeceğiz
 
         try {
+          // Mobile menu events
+          const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+          const mobileMenu = document.getElementById('mobileMenu');
+          const closeMobileMenu = document.getElementById('closeMobileMenu');
+          mobileMenuBtn?.addEventListener('click', () => mobileMenu?.classList.remove('hidden'));
+          closeMobileMenu?.addEventListener('click', () => mobileMenu?.classList.add('hidden'));
+          mobileMenu?.addEventListener('click', (e) => { if (e.target === mobileMenu) mobileMenu.classList.add('hidden'); });
+
+          // Kategoriler dropdown
+          const mobileCategoriesBtn = document.getElementById('mobileCategoriesBtn');
+          const mobileCategoriesDropdown = document.getElementById('mobileCategoriesDropdown');
+          const categoriesArrow = document.getElementById('categoriesArrow');
+          const mobileCategoriesPanel = document.getElementById('mobileCategoriesPanel');
+          const closeMobileCategoriesPanel = document.getElementById('closeMobileCategoriesPanel');
+          const mobileCampaignsBtn = document.getElementById('mobileCampaignsBtn');
+          const mobileCampaignsDropdown = document.getElementById('mobileCampaignsDropdown');
+          const campaignsArrow = document.getElementById('campaignsArrow');
+
+          mobileCategoriesBtn?.addEventListener('click', async () => {
+            if (mobileCategoriesDropdown?.classList.contains('hidden')) {
+              // Kategorileri yükle (basit liste)
+              const res = await fetch('/api/categories');
+              const cats = await res.json();
+              if (mobileCategoriesDropdown) {
+                mobileCategoriesDropdown.innerHTML = cats.map(c => `
+                  <a href="/category?id=${c._id}" class="block py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gold-600 transition-colors">${c.name}</a>
+                `).join('');
+              }
+              mobileCategoriesDropdown.classList.remove('hidden');
+              categoriesArrow?.classList.add('rotate-180');
+            } else {
+              mobileCategoriesDropdown?.classList.add('hidden');
+              categoriesArrow?.classList.remove('rotate-180');
+            }
+          });
+
+          
+
+          // İsteğe bağlı ayrı panel aç/kapat
+          closeMobileCategoriesPanel?.addEventListener('click', () => mobileCategoriesPanel?.classList.add('hidden'));
+          // Sağ panel kaldırıldı; referans yok
+
           // Kampanya verilerini yükle
           await loadCampaigns();
           
-          const catRes = await fetch(`/api/categories/${categoryId}`);
-          if (catRes.ok) {
-            const cat = await catRes.json();
-            breadcrumbCategory.textContent = cat.name;
-            // Eğer kategori adı zaten "Ürünler" ise tekrar ekleme
-            if (cat.name === 'Ürünler') {
-              productsTitle.textContent = 'Ürünler';
-            } else {
-              productsTitle.textContent = `${cat.name} Ürünleri`;
-            }
-            document.getElementById('categoryTitle').innerHTML = `<span class="gradient-text">${cat.name}</span>`;
-            
-            // Kategori açıklamasını güncelle
-            const categoryDescription = document.getElementById('categoryDescription');
-            if (categoryDescription) {
-              if (cat.name === 'Ürünler') {
-                categoryDescription.textContent = 'Koleksiyonumuzdaki seçkin parçalar ve zarif tasarımlar';
-              } else {
-                categoryDescription.textContent = `${cat.name} kategorisindeki seçkin parçalar ve zarif tasarımlar`;
+          // Aktif kampanya barını hazırla
+          try {
+            const res = await fetch('/api/campaigns');
+            const list = await res.json();
+            if (Array.isArray(list) && list.length > 0) {
+              const c = list[0];
+              const bar = document.getElementById('activeCampaignBar');
+              const txt = document.getElementById('activeCampaignText');
+              if (bar && txt) {
+                txt.textContent = c.name || 'Kampanya';
+                bar.classList.remove('hidden');
+                bar.onclick = () => window.location.href = `/category?campaignId=${c._id}`;
               }
             }
-            
-            // Sayfa başlığını da güncelle
-            document.getElementById('pageTitle').textContent = `${cat.name} - Butik Mağaza`;
+          } catch (_) {}
+          
+          // Eğer URL parametresinde id yoksa, path'ten slug yakala ve kategori ID'sine çevir
+          if (!categoryId) {
+            const parts = window.location.pathname.split('/').filter(Boolean);
+            const possibleSlug = parts.length === 1 ? parts[0] : null;
+            if (possibleSlug) {
+              try {
+                // 1) Doğrudan slug ile dene
+                const slugRes = await fetch(`/api/categories/slug/${possibleSlug}`);
+                if (slugRes.ok) {
+                  const catBySlug = await slugRes.json();
+                  categoryId = catBySlug?._id || null;
+                }
+                // 2) Bulunamazsa isimden eşleştirme dene (Türkçe karakter normalizasyonu ile)
+                if (!categoryId) {
+                  const catsRes = await fetch('/api/categories');
+                  if (catsRes.ok) {
+                    const cats = await catsRes.json();
+                    const normalize = (s) => String(s || '')
+                      .toLowerCase()
+                      .replace(/ç/g, 'c')
+                      .replace(/ğ/g, 'g')
+                      .replace(/ı/g, 'i')
+                      .replace(/ö/g, 'o')
+                      .replace(/ş/g, 's')
+                      .replace(/ü/g, 'u');
+                    const target = normalize(possibleSlug);
+                    const hit = cats.find(c => normalize(c.slug) === target || normalize(c.name) === target);
+                    if (hit) categoryId = hit._id;
+                  }
+                }
+              } catch (err) {
+                console.error('Slug üzerinden kategori alınırken hata:', err);
+              }
+            }
           }
 
-          const res = await fetch(`/api/products?categoryId=${categoryId}`);
+          // Başlık ve açıklama
+          if (categoryId) {
+            const catRes = await fetch(`/api/categories/${categoryId}`);
+            if (catRes.ok) {
+              const cat = await catRes.json();
+              breadcrumbCategory.textContent = cat.name;
+              productsTitle.textContent = cat.name === 'Ürünler' ? 'Ürünler' : `${cat.name} Ürünleri`;
+              document.getElementById('categoryTitle').innerHTML = `<span class="gradient-text">${cat.name}</span>`;
+              const categoryDescription = document.getElementById('categoryDescription');
+              if (categoryDescription) {
+                categoryDescription.textContent = cat.name === 'Ürünler' ? 'Koleksiyonumuzdaki seçkin parçalar ve zarif tasarımlar' : `${cat.name} kategorisindeki seçkin parçalar ve zarif tasarımlar`;
+              }
+              document.getElementById('pageTitle').textContent = `${cat.name} - Butik Mağaza`;
+            }
+          } else if (campaignId) {
+            const campRes = await fetch(`/api/campaigns/${campaignId}`);
+            if (campRes.ok) {
+              const camp = await campRes.json();
+              breadcrumbCategory.textContent = camp.name || 'Kampanya';
+              productsTitle.textContent = `${camp.name || 'Kampanya'} Ürünleri`;
+              document.getElementById('categoryTitle').innerHTML = `<span class=\"gradient-text\">${camp.name || 'Kampanya'}</span>`;
+              const categoryDescription = document.getElementById('categoryDescription');
+              if (categoryDescription) {
+                categoryDescription.textContent = camp.description || 'Kampanya kapsamındaki seçkin ürünler';
+              }
+              document.getElementById('pageTitle').textContent = `${camp.name || 'Kampanya'} - Butik Mağaza`;
+            }
+          }
+
+          // Eğer özel olarak kategori görünümü istenmişse, kategorileri göster ve çık
+          if (!categoryId && !campaignId && view === 'categories') {
+            await showAllCategories();
+            // WhatsApp numarasını güncelle
+            updateWhatsAppNumber();
+            return;
+          }
+
+          // Ürünleri al (kategori varsa kategoriye göre, yoksa tüm ürünler)
+          let url = '/api/products';
+          if (categoryId) url = `/api/products?categoryId=${categoryId}`;
+          const res = await fetch(url);
           if (!res.ok) throw new Error('Ürünler alınamadı');
-          const products = await res.json();
+          let products = await res.json();
+
+          // Kampanya filtresi
+          if (campaignId) {
+            try {
+              const campRes2 = await fetch(`/api/campaigns/${campaignId}`);
+              const campaign = await campRes2.json();
+              if (campaign && campaign.isActive) {
+                if (campaign.type === 'products' && Array.isArray(campaign.productIds)) {
+                  const ids = new Set(campaign.productIds.map(p => p._id || p));
+                  products = products.filter(p => ids.has(p._id));
+                } else if (campaign.type === 'category' && campaign.targetId) {
+                  const catId = campaign.targetId._id || campaign.targetId;
+                  products = products.filter(p => p.categoryId && (p.categoryId._id === catId || p.categoryId === catId));
+                }
+              }
+            } catch (err) {
+              console.error('Kampanya filtrelemesinde hata:', err);
+            }
+          }
+
+          // Başlık ve breadcrumb: hiçbir parametre yoksa varsayılan "Tüm Ürünler"
+          if (!categoryId && !campaignId) {
+            breadcrumbCategory.textContent = 'Tüm Ürünler';
+            productsTitle.textContent = 'Tüm Ürünler';
+            document.getElementById('categoryTitle').innerHTML = '<span class="gradient-text">Tüm Ürünler</span>';
+            const categoryDescription = document.getElementById('categoryDescription');
+            if (categoryDescription) {
+              categoryDescription.textContent = 'Koleksiyonumuzdaki tüm ürünleri keşfedin';
+            }
+            document.getElementById('pageTitle').textContent = 'Tüm Ürünler - Butik Mağaza';
+          }
+
           productCount.textContent = `(${products.length} ürün)`;
 
           if (!products.length) {
@@ -337,14 +629,20 @@
               </div>
             </div>
           `).join('');
+
+          // Sağ panel olmadığı için ek işleme gerek yok
         } catch (e) {
           productsContainer.innerHTML = `<p class="text-red-600">Hata: ${e.message}</p>`;
         }
+        // WhatsApp numarasını güncelle
+        updateWhatsAppNumber();
       });
 
       // Tüm kategorileri göster
       async function showAllCategories() {
         try {
+          const productsContainer = document.getElementById('productsContainer');
+          if (!productsContainer) return;
           // Sayfa başlığını güncelle
           document.getElementById('pageTitle').textContent = 'Kategoriler - Butik Mağaza';
           document.getElementById('categoryTitle').innerHTML = '<span class="gradient-text">Tüm Kategoriler</span>';
@@ -475,37 +773,8 @@
         return `<span class="text-lg font-bold text-gold-600">₺${product.price}</span>`;
       }
     </script>
-    <script>
-      // Mobile Menu Functions
-      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-      const mobileMenu = document.getElementById('mobileMenu');
-      const closeMobileMenu = document.getElementById('closeMobileMenu');
-      const mobileSearch = document.getElementById('mobileSearch');
 
-      // Toggle mobile menu
-      mobileMenuBtn?.addEventListener('click', () => {
-        mobileMenu.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-      });
 
-      // Close mobile menu
-      closeMobileMenu?.addEventListener('click', () => {
-        mobileMenu.classList.add('hidden');
-        document.body.style.overflow = '';
-      });
 
-      // Close mobile menu when clicking outside
-      mobileMenu?.addEventListener('click', (e) => {
-        if (e.target === mobileMenu) {
-          mobileMenu.classList.add('hidden');
-          document.body.style.overflow = '';
-        }
-      });
-
-      // Toggle mobile search
-      mobileMenuBtn?.addEventListener('click', () => {
-        mobileSearch.classList.toggle('hidden');
-      });
-    </script>
   </body>
 </html> 

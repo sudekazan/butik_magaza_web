@@ -42,6 +42,20 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Slug ile tekil kategori getir
+router.get('/slug/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) return res.status(400).json({ message: 'Kategori slug gerekli' });
+    const category = await Category.findOne({ slug });
+    if (!category) return res.status(404).json({ message: 'Kategori bulunamadı' });
+    res.json(category);
+  } catch (err) {
+    console.error('Kategori (slug) getirilirken hata:', err);
+    res.status(500).json({ message: 'Kategori alınamadı', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+  }
+});
+
 // Tekil kategori getir
 router.get('/:id', async (req, res) => {
   try {
