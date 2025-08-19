@@ -11,7 +11,7 @@
 		overlay.className = 'fixed inset-0 z-[99999] hidden';
 
 		overlay.innerHTML = `
-		  <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+		  <div class="absolute inset-0 bg-black/40"></div>
 		  <div class="min-h-full w-full grid place-items-center p-4">
 		    <div class="max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-[fadeIn_.2s_ease]">
 		      <div class="px-6 pt-6 pb-4">
@@ -63,6 +63,25 @@
 		iconBox.innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${cfg.svg}</svg>`;
 	}
 
+	// Mesaja göre otomatik tür ve başlık belirleme
+	function inferTypeAndTitle(message) {
+		try {
+			const text = String(message || '').toLowerCase();
+			if (/(\[?error\]?|hata|başarısız|invalid|geçersiz|olmadı|failed)/.test(text)) {
+				return { type: 'error', title: 'Hata' };
+			}
+			if (/(uyarı|dikkat|warning|warn)/.test(text)) {
+				return { type: 'warn', title: 'Uyarı' };
+			}
+			if (/(başarılı|tamam|ok|success|kaydedildi|eklendi|güncellendi|silindi)/.test(text)) {
+				return { type: 'success', title: 'Başarılı' };
+			}
+			return { type: 'info', title: 'Bilgi' };
+		} catch (_) {
+			return { type: 'info', title: 'Bilgi' };
+		}
+	}
+
 	function showAlert(message, options) {
 		try {
 			const { title = 'Bilgi', type = 'success', autoCloseMs = 0 } = options || {};
@@ -93,7 +112,8 @@
 	// Yerleşik alert'i koru ve override et
 	if (!window.__nativeAlert) window.__nativeAlert = window.alert.bind(window);
 	window.alert = function (msg) {
-		showAlert(msg);
+		const inferred = inferTypeAndTitle(msg);
+		showAlert(msg, inferred);
 	};
 
 	// İsteğe bağlı dışa aktarım

@@ -1,0 +1,19 @@
+node:internal/modules/package_json_reader:113
+  const parsed = modulesBinding.readPackageJSON(
+                                ^
+
+Error: Invalid package config /Users/sudekazan/Desktop/web/satın_almasız_web_sitesi/node_modules/send/node_modules/encodeurl/package.json.
+    at Object.read (node:internal/modules/package_json_reader:113:33)
+    at _readPackage (node:internal/modules/cjs/loader:482:55)
+    at resolveExports (node:internal/modules/cjs/loader:667:15)
+    at Module._findPath (node:internal/modules/cjs/loader:738:31)
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1396:27)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1051:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1056:22)
+    at Module._load (node:internal/modules/cjs/loader:1219:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:238:24) {
+  code: 'ERR_INVALID_PACKAGE_CONFIG'
+}
+
+Node.js v24.5.0

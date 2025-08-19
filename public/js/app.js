@@ -43,18 +43,31 @@ const createCategoryCard = (category) => {
   return `
     <a href="/category?id=${category._id}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left category-card bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60 block hover:scale-105 transform" data-category-id="${category._id}">
       <div class="overflow-hidden relative aspect-[4/5]">
-        <img src="${img}" alt="${category.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+        <!-- Loading State -->
+        <div class="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+          <div class="w-8 h-8 border-4 border-gray-300 border-t-accent-500 rounded-full animate-spin"></div>
+        </div>
+        
+        <!-- Image with Error Handling -->
+        <img 
+          src="${img}" 
+          alt="${category.name}" 
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-10"
+          onload="this.previousElementSibling.style.display='none'"
+          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'; this.previousElementSibling.style.display='none';"
+        />
+        
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-20"></div>
         
         <!-- Category Icon -->
-        <div class="absolute top-3 left-3 w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+        <div class="absolute top-3 left-3 w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 z-30">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           </svg>
         </div>
         
         <!-- Hover Effect -->
-        <div class="absolute inset-0 bg-gradient-to-t from-accent-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-accent-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30"></div>
       </div>
       
       <div class="p-4 sm:p-5 text-center">
@@ -793,7 +806,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Kategorileri ve ürünleri yükle
   await Promise.all([
-    fetchAndRenderCategories()
+    fetchAndRenderCategories(),
+    loadFeaturedProducts()
   ]);
   
   // Masaüstü kategoriler menüsünü yükle
@@ -1763,6 +1777,8 @@ const loadFeaturedProducts = async () => {
 let featuredCurrentSlide = 0;
 let featuredTotalSlides = 0;
 let featuredProductsPerView = 4; // Varsayılan olarak 4 ürün
+let featuredStepPx = 0; // Ölçülen adım (slide genişliği + gap)
+let featuredMaxTranslatePx = 0; // İçeriğin maksimum kaydırılabilecek mesafesi
 
 // Responsive olarak ürün sayısını ayarla
 const updateFeaturedProductsPerView = () => {
@@ -1879,100 +1895,88 @@ const displayFeaturedProducts = () => {
     return;
   }
   
-  // Mevcut öne çıkan ürünler bölümünü kaldır (varsa)
-  const existingFeaturedSection = document.querySelector('section[data-featured-section="true"]');
-  if (existingFeaturedSection) {
-    existingFeaturedSection.remove();
-    console.log('🗑️ Mevcut öne çıkan ürünler bölümü kaldırıldı');
-  }
-  
   console.log('✅ Öne çıkan ürünler bulundu, HTML oluşturuluyor...');
   
-  // Ana sayfada öne çıkan ürünler bölümü oluştur
-  const featuredSection = document.createElement('section');
-  featuredSection.className = 'mb-12';
-  featuredSection.setAttribute('data-featured-section', 'true'); // Benzersiz tanımlayıcı ekle
-  featuredSection.innerHTML = `
-    <div class="text-center mb-8">
-      <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">Öne Çıkan Ürünler</h2>
-      <p class="text-gray-600 max-w-2xl mx-auto">En popüler ve özel ürünlerimizi keşfedin</p>
-    </div>
-    
-    <!-- Slider Container -->
-    <div class="relative max-w-7xl mx-auto px-8">
-      <!-- Navigation Buttons -->
-      <button id="featuredPrevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-white transition-all duration-300 flex items-center justify-center text-gray-600 hover:text-accent-600 disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      
-      <button id="featuredNextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-white transition-all duration-300 flex items-center justify-center text-gray-600 hover:text-accent-600 disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </button>
-      
-      <!-- Slider Track -->
-      <div class="overflow-hidden">
-        <div id="featuredSlider" class="flex transition-transform duration-500 ease-in-out scroll-smooth" style="transform: translateX(0%)">
-          ${featuredProducts.map(item => `
-            <div class="featured-slide flex-shrink-0 w-[280px] sm:w-[320px] md:w-[280px] lg:w-[240px] mr-4 last:mr-0">
-              ${createProductCard(item.productId)}
-            </div>
-          `).join('')}
-        </div>
-      </div>
-      
-      <!-- Dots Indicator -->
-      <div id="featuredDots" class="flex justify-center gap-2 mt-6">
-        ${Array.from({ length: Math.max(1, featuredProducts.length - getFeaturedProductsPerView() + 1) }, (_, i) => `
-          <button class="featured-dot w-3 h-3 rounded-full transition-all duration-300 ${i === 0 ? 'bg-accent-500 scale-125' : 'bg-gray-300 hover:bg-gray-400'}" data-slide="${i}"></button>
+  // Var olan "#featuredProducts" bölümünün içine slider'ı yerleştir
+  const section = document.getElementById('featuredProducts');
+  const container = section ? section.querySelector('div.relative') : null;
+  if (!section || !container) {
+    console.warn('⚠️ #featuredProducts bölümü bulunamadı, fallback olarak kategori öncesine ekleniyor');
+    const fallback = document.getElementById('categories');
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `<div id="featuredSliderBlock"></div>`;
+    if (fallback && fallback.parentNode) fallback.parentNode.insertBefore(wrapper, fallback);
+  }
+  
+  // Önceki blok varsa temizle
+  let block = document.getElementById('featuredSliderBlock');
+  if (!block) {
+    block = document.createElement('div');
+    block.id = 'featuredSliderBlock';
+    block.className = 'relative mt-6 sm:mt-10';
+    (container || document.body).insertBefore(block, (container && container.lastElementChild) || null);
+  } else {
+    block.innerHTML = '';
+  }
+  
+  block.innerHTML = `
+    <!-- Navigation Buttons -->
+    <button id="featuredPrevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-white transition-all duration-300 flex items-center justify-center text-gray-600 hover:text-accent-600 disabled:opacity-50 disabled:cursor-not-allowed">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <button id="featuredNextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:bg-white transition-all duration-300 flex items-center justify-center text-gray-600 hover:text-accent-600 disabled:opacity-50 disabled:cursor-not-allowed">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="overflow-hidden">
+      <div id="featuredSlider" class="flex transition-transform duration-500 ease-in-out scroll-smooth" style="transform: translateX(0%)">
+        ${featuredProducts.map(item => `
+          <div class="featured-slide flex-shrink-0 w-[280px] sm:w-[320px] md:w-[280px] lg:w-[240px] mr-4 last:mr-0">
+            ${createProductCard(item.productId)}
+          </div>
         `).join('')}
       </div>
     </div>
+    <div id="featuredDots" class="flex justify-center gap-2 mt-6">
+      ${Array.from({ length: Math.max(1, featuredProducts.length - getFeaturedProductsPerView() + 1) }, (_, i) => `
+        <button class="featured-dot w-3 h-3 rounded-full transition-all duration-300 ${i === 0 ? 'bg-accent-500 scale-125' : 'bg-gray-300 hover:bg-gray-400'}" data-slide="${i}"></button>
+      `).join('')}
+    </div>
   `;
   
-  console.log('🔍 Kategoriler bölümü aranıyor...');
-      // Öne çıkan ürünleri kategorilerden önce ekle
-    const categoriesSection = document.getElementById('categories');
-    if (categoriesSection) {
-      console.log('✅ Kategoriler bölümü bulundu, öne çıkan ürünler ekleniyor...');
-      categoriesSection.parentNode.insertBefore(featuredSection, categoriesSection);
-      console.log('🎉 Öne çıkan ürünler başarıyla eklendi!');
-      
-      // Slider'ı aktif hale getir
-      setupFeaturedSlider();
-    } else {
-      console.log('❌ Kategoriler bölümü bulunamadı!');
-    }
+  // Bölümü görünür yap
+  section?.classList.remove('hidden');
+  // Slider'ı aktif hale getir
+  setupFeaturedSlider();
 };
 
-// Slider pozisyonunu güncelle
+// Ölçüm: adım ve maksimum kaydırma mesafesini hesapla
+const measureFeatured = () => {
+  const slider = document.getElementById('featuredSlider');
+  if (!slider) return;
+  const slides = Array.from(slider.querySelectorAll('.featured-slide'));
+  if (slides.length === 0) return;
+  const first = slides[0];
+  const firstStyle = window.getComputedStyle(first);
+  const mr = parseFloat(firstStyle.marginRight) || 0;
+  featuredStepPx = first.offsetWidth + mr;
+  // Toplam içerik genişliği (son elemanın sağ marjını zaten 0 verdik)
+  const totalWidth = slides.reduce((sum, el) => {
+    const s = window.getComputedStyle(el);
+    return sum + el.offsetWidth + (parseFloat(s.marginRight) || 0);
+  }, 0);
+  const containerWidth = slider.parentElement ? slider.parentElement.clientWidth : window.innerWidth;
+  featuredMaxTranslatePx = Math.max(0, totalWidth - containerWidth);
+};
+
+// Slider pozisyonunu güncelle (ölçümlere göre)
 const updateFeaturedSliderPosition = () => {
   const featuredSlider = document.getElementById('featuredSlider');
   if (!featuredSlider) return;
-  
-  // Her slide için sabit genişlik değerleri
-  let slideWidth;
-  if (window.innerWidth < 640) {
-    slideWidth = 280; // Mobil: 280px
-  } else if (window.innerWidth < 768) {
-    slideWidth = 320; // Tablet: 320px
-  } else if (window.innerWidth < 1024) {
-    slideWidth = 280; // Laptop: 280px
-  } else {
-    slideWidth = 240; // Desktop: 240px
-  }
-  
-  // Gap değeri (mr-4 = 16px)
-  const gap = 16;
-  
-  // Her slide için tam olarak bir ürün genişliği + gap kadar kaydır
-  const translateX = -(featuredCurrentSlide * (slideWidth + gap));
+  // Aktüel ölçüm yoksa ölç
+  if (!featuredStepPx || !Number.isFinite(featuredStepPx)) measureFeatured();
+  const rawTranslate = featuredCurrentSlide * featuredStepPx;
+  const translateX = -Math.min(rawTranslate, featuredMaxTranslatePx);
   featuredSlider.style.transform = `translateX(${translateX}px)`;
-  
-  console.log(`Slide ${featuredCurrentSlide}: translateX(${translateX}px), slideWidth: ${slideWidth}px, gap: ${gap}px, total: ${slideWidth + gap}px`);
 };
 
 // Dots'ları güncelle
@@ -2021,9 +2025,11 @@ const setupFeaturedSlider = () => {
   const nextBtn = document.getElementById('featuredNextBtn');
   const dots = document.querySelectorAll('.featured-dot');
   
-  // Slider değişkenlerini sıfırla
+  // Slider değişkenlerini sıfırla ve ölç
   featuredCurrentSlide = 0;
-  featuredTotalSlides = Math.max(0, featuredProducts.length - getFeaturedProductsPerView());
+  measureFeatured();
+  // Toplam adım sayısını öğe sayısına göre belirle (daha güvenilir)
+  featuredTotalSlides = Math.max(0, (featuredProducts?.length || 0) - getFeaturedProductsPerView());
   
   // Navigation butonlarını güncelle
   updateFeaturedNavigationButtons();
@@ -2052,11 +2058,17 @@ const setupFeaturedSlider = () => {
     });
   }
   
-  // Dots
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => {
-      goToFeaturedSlide(index);
-    });
+  // Dots yeniden oluştur (ölçüme göre)
+  // Dots container'ı yeniden kur
+  const dotsContainerEl = document.getElementById('featuredDots');
+  if (dotsContainerEl) {
+    const needed = featuredTotalSlides + 1;
+    dotsContainerEl.innerHTML = Array.from({ length: needed }, (_, i) => `
+      <button class="featured-dot w-3 h-3 rounded-full transition-all duration-300 ${i === 0 ? 'bg-accent-500 scale-125' : 'bg-gray-300 hover:bg-gray-400'}" data-slide="${i}"></button>
+    `).join('');
+  }
+  document.querySelectorAll('.featured-dot').forEach((dot, index) => {
+    dot.addEventListener('click', () => goToFeaturedSlide(index));
   });
   
   // Touch/swipe desteği ekle
@@ -2091,16 +2103,15 @@ const setupFeaturedSlider = () => {
   
   // Window resize event'i
   window.addEventListener('resize', () => {
-    featuredTotalSlides = Math.max(0, featuredProducts.length - getFeaturedProductsPerView());
-    featuredCurrentSlide = Math.min(featuredCurrentSlide, featuredTotalSlides);
+    const prevIndex = featuredCurrentSlide;
+    measureFeatured();
+    featuredTotalSlides = Math.max(0, (featuredProducts?.length || 0) - getFeaturedProductsPerView());
+    featuredCurrentSlide = Math.min(prevIndex, featuredTotalSlides);
     updateFeaturedSliderPosition();
     updateFeaturedDots();
     updateFeaturedNavigationButtons();
-    
-    // Dots'ları güncelle
-    if (dotsContainer) {
-      dotsContainer.style.display = featuredTotalSlides > 0 ? 'flex' : 'none';
-    }
+    const dotsUpdate = document.getElementById('featuredDots');
+    if (dotsUpdate) dotsUpdate.style.display = featuredTotalSlides > 0 ? 'flex' : 'none';
   });
 };
 
