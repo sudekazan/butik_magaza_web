@@ -61,8 +61,15 @@ const checkImageExists = async (filename, imageUrl) => {
     
     if (!data.exists) {
       console.warn(`⚠️ Görsel dosyası bulunamadı: ${filename}`);
-      // Hata raporunu gönder
-      reportImageError(imageUrl);
+      console.log('🔍 Aranan yollar:', data.searchedPaths);
+      console.log('📁 Mevcut dizinler:', { currentDir: data.currentDir, cwd: data.cwd });
+      
+      // Hata raporunu sadece bir kez gönder
+      if (!window.reportedImages) window.reportedImages = new Set();
+      if (!window.reportedImages.has(imageUrl)) {
+        window.reportedImages.add(imageUrl);
+        reportImageError(imageUrl);
+      }
     }
   } catch (error) {
     console.error('❌ Görsel varlık kontrolü hatası:', error);
@@ -116,6 +123,11 @@ const reportImageError = async (imageUrl) => {
 
 // Görsel hata yönetimi fonksiyonu
 const handleImageError = (imgElement, originalSrc) => {
+  // Eğer bu görsel zaten hata verdi ise tekrar rapor etme
+  if (imgElement.dataset.errorReported === 'true') {
+    return;
+  }
+  
   console.log('❌ Görsel yükleme hatası:', originalSrc);
   
   // Loading state'i gizle
@@ -127,7 +139,8 @@ const handleImageError = (imgElement, originalSrc) => {
   // Fallback görsel kullan
   imgElement.src = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
   
-  // Hata raporunu gönder
+  // Hata raporunu sadece bir kez gönder
+  imgElement.dataset.errorReported = 'true';
   reportImageError(originalSrc);
   
   // Görsel hata logunu konsola yaz

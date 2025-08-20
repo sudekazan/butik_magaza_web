@@ -28,6 +28,25 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('📁 Uploads klasörü oluşturuldu:', uploadsDir);
 }
 
+// Render.com ve diğer cloud platformlar için uploads klasörü yolu kontrolü
+const getUploadsPath = (filename) => {
+  // Önce mevcut uploads klasöründe ara
+  const localPath = path.join(__dirname, 'uploads', filename);
+  if (fs.existsSync(localPath)) {
+    return localPath;
+  }
+  
+  // Eğer bulunamazsa, process.cwd() ile dene
+  const cwdPath = path.join(process.cwd(), 'uploads', filename);
+  if (fs.existsSync(cwdPath)) {
+    return cwdPath;
+  }
+  
+  // Son olarak __dirname ile tekrar dene
+  const dirnamePath = path.join(__dirname, 'uploads', filename);
+  return dirnamePath;
+};
+
 // Multer konfigürasyonu
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -61,11 +80,16 @@ app.use(morgan('dev'));
 
 // Static files - Uploads klasörü için özel middleware
 app.use('/uploads', (req, res, next) => {
-  const filePath = path.join(__dirname, 'uploads', req.path);
+  const filePath = getUploadsPath(req.path);
   
   // Dosya var mı kontrol et
   if (!fs.existsSync(filePath)) {
     console.log(`❌ Dosya bulunamadı: ${req.path}`);
+    console.log(`🔍 Aranan yol: ${filePath}`);
+    console.log(`📁 Mevcut uploads klasörleri:`);
+    console.log(`   - __dirname: ${path.join(__dirname, 'uploads')}`);
+    console.log(`   - process.cwd: ${path.join(process.cwd(), 'uploads')}`);
+    
     // Dosya bulunamadığında JSON yerine 404 HTML sayfası döndür
     return res.status(404).send(`
       <!DOCTYPE html>
@@ -74,6 +98,7 @@ app.use('/uploads', (req, res, next) => {
         <body>
           <h1>Görsel Bulunamadı</h1>
           <p>İstenen görsel dosyası bulunamadı: ${req.path}</p>
+          <p>Aranan yol: ${filePath}</p>
         </body>
       </html>
     `);
@@ -178,15 +203,42 @@ app.post('/api/upload-test', (req, res) => {
 // Uploads klasörü health check
 app.get('/api/uploads/health', (req, res) => {
   try {
-    const uploadsDir = path.join(__dirname, 'uploads');
-    const files = fs.readdirSync(uploadsDir);
+    // Tüm olası uploads klasörlerini kontrol et
+    const possibleDirs = [
+      path.join(__dirname, 'uploads'),
+      path.join(process.cwd(), 'uploads')
+    ];
+    
+    let uploadsDir = null;
+    let files = [];
+    
+    for (const dir of possibleDirs) {
+      if (fs.existsSync(dir)) {
+        uploadsDir = dir;
+        files = fs.readdirSync(dir);
+        break;
+      }
+    }
+    
+    if (!uploadsDir) {
+      return res.status(500).json({
+        status: 'unhealthy',
+        error: 'Hiçbir uploads klasörü bulunamadı',
+        searchedPaths: possibleDirs,
+        currentDir: __dirname,
+        cwd: process.cwd(),
+        timestamp: new Date().toISOString(),
+        message: 'Uploads klasörü bulunamadı'
+      });
+    }
     
     res.json({
       status: 'healthy',
       uploadsDir: uploadsDir,
       fileCount: files.length,
       timestamp: new Date().toISOString(),
-      message: 'Uploads klasörü erişilebilir'
+      message: 'Uploads klasörü erişilebilir',
+      searchedPaths: possibleDirs
     });
   } catch (error) {
     console.error('❌ Uploads health check hatası:', error);
@@ -203,7 +255,7 @@ app.get('/api/uploads/health', (req, res) => {
 app.get('/api/uploads/check/:filename(*)', (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = getUploadsPath(filename);
     
     if (fs.existsSync(filePath)) {
       const stats = fs.statSync(filePath);
@@ -216,10 +268,19 @@ app.get('/api/uploads/check/:filename(*)', (req, res) => {
         path: filePath
       });
     } else {
+      // Tüm olası yolları kontrol et
+      const possiblePaths = [
+        path.join(__dirname, 'uploads', filename),
+        path.join(process.cwd(), 'uploads', filename)
+      ];
+      
       res.json({
         exists: false,
         filename: filename,
-        message: 'Dosya bulunamadı'
+        message: 'Dosya bulunamadı',
+        searchedPaths: possiblePaths,
+        currentDir: __dirname,
+        cwd: process.cwd()
       });
     }
   } catch (error) {
@@ -234,12 +295,35 @@ app.get('/api/uploads/check/:filename(*)', (req, res) => {
 // Uploads klasörü debug endpoint'i
 app.get('/api/uploads/debug', (req, res) => {
   try {
-    const uploadsDir = path.join(__dirname, 'uploads');
-    const files = fs.readdirSync(uploadsDir);
+    // Tüm olası uploads klasörlerini kontrol et
+    const possibleDirs = [
+      path.join(__dirname, 'uploads'),
+      path.join(process.cwd(), 'uploads')
+    ];
+    
+    let uploadsDir = null;
+    let files = [];
+    
+    for (const dir of possibleDirs) {
+      if (fs.existsSync(dir)) {
+        uploadsDir = dir;
+        files = fs.readdirSync(dir);
+        break;
+      }
+    }
+    
+    if (!uploadsDir) {
+      return res.json({
+        error: 'Hiçbir uploads klasörü bulunamadı',
+        searchedPaths: possibleDirs,
+        currentDir: __dirname,
+        cwd: process.cwd()
+      });
+    }
     
     // İlk 10 dosyayı detaylı bilgi ile listele
     const fileDetails = files.slice(0, 10).map(filename => {
-      const filePath = path.join(__dirname, 'uploads', filename);
+      const filePath = path.join(uploadsDir, filename);
       const stats = fs.statSync(filePath);
       return {
         filename,
