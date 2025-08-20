@@ -6,6 +6,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import multer from 'multer';
 import fs from 'fs';
+import mime from 'mime-types';
 import connectDB from './src/config/db.js';
 import authRoutes from './src/routes/auth.js';
 import categoryRoutes from './src/routes/categories.js';
@@ -30,21 +31,24 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Render.com ve diğer cloud platformlar için uploads klasörü yolu kontrolü
 const getUploadsPath = (filename) => {
+  // Güvenli hale getir: baştaki "/" işaretlerini kırp ve directory traversal engelle
+  const safe = String(filename || '').replace(/^\/+/, '');
+  if (safe.includes('..')) return null;
+
   // Önce mevcut uploads klasöründe ara
-  const localPath = path.join(__dirname, 'uploads', filename);
+  const localPath = path.join(__dirname, 'uploads', safe);
   if (fs.existsSync(localPath)) {
     return localPath;
   }
-  
+
   // Eğer bulunamazsa, process.cwd() ile dene
-  const cwdPath = path.join(process.cwd(), 'uploads', filename);
+  const cwdPath = path.join(process.cwd(), 'uploads', safe);
   if (fs.existsSync(cwdPath)) {
     return cwdPath;
   }
-  
-  // Son olarak __dirname ile tekrar dene
-  const dirnamePath = path.join(__dirname, 'uploads', filename);
-  return dirnamePath;
+
+  // Son seçenek olarak localPath döndür (varsa middleware içinde tekrar kontrol edilecek)
+  return localPath;
 };
 
 // Multer konfigürasyonu
@@ -80,63 +84,47 @@ app.use(morgan('dev'));
 
 // Static files - Uploads klasörü için özel middleware
 app.use('/uploads', (req, res, next) => {
-  const filePath = getUploadsPath(req.path);
-  
-  // Dosya var mı kontrol et
-  if (!fs.existsSync(filePath)) {
-    console.log(`❌ Dosya bulunamadı: ${req.path}`);
-    console.log(`🔍 Aranan yol: ${filePath}`);
-    console.log(`📁 Mevcut uploads klasörleri:`);
-    console.log(`   - __dirname: ${path.join(__dirname, 'uploads')}`);
-    console.log(`   - process.cwd: ${path.join(process.cwd(), 'uploads')}`);
-    
-    // Dosya bulunamadığında JSON yerine 404 HTML sayfası döndür
-    return res.status(404).send(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Görsel Bulunamadı</title></head>
-        <body>
-          <h1>Görsel Bulunamadı</h1>
-          <p>İstenen görsel dosyası bulunamadı: ${req.path}</p>
-          <p>Aranan yol: ${filePath}</p>
-        </body>
-      </html>
-    `);
-  }
-  
-  // Dosya türünü belirle
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeTypes = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp'
-  };
-  
-  const contentType = mimeTypes[ext] || 'application/octet-stream';
-  
-  // Dosyayı oku ve gönder
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      console.error('❌ Dosya okuma hatası:', err);
-      return res.status(500).send(`
+  try {
+    const requested = decodeURIComponent(req.path || '');
+    const safe = String(requested).replace(/^\/+/, '');
+    if (safe.includes('..')) {
+      return res.status(400).send('Geçersiz dosya yolu');
+    }
+
+    const filePath = getUploadsPath(safe);
+
+    // Dosya var mı kontrol et
+    if (!filePath || !fs.existsSync(filePath)) {
+      console.log(`❌ Dosya bulunamadı: ${requested}`);
+      console.log(`🔍 Aranan yol: ${filePath}`);
+      console.log(`📁 Mevcut uploads klasörleri:`);
+      console.log(`   - __dirname: ${path.join(__dirname, 'uploads')}`);
+      console.log(`   - process.cwd: ${path.join(process.cwd(), 'uploads')}`);
+
+      return res.status(404).send(`
         <!DOCTYPE html>
         <html>
-          <head><title>Görsel Okunamadı</title></head>
+          <head><title>Görsel Bulunamadı</title></head>
           <body>
-            <h1>Görsel Okunamadı</h1>
-            <p>Görsel dosyası okunamadı: ${req.path}</p>
+            <h1>Görsel Bulunamadı</h1>
+            <p>İstenen görsel dosyası bulunamadı: ${requested}</p>
+            <p>Aranan yol: ${filePath}</p>
           </body>
         </html>
       `);
     }
-    
+
+    // İçerik türünü belirle
+    const contentType = mime.lookup(filePath) || 'application/octet-stream';
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 yıl cache
+    // Daha az agresif cache: 1 gün (stale görselleri azaltır). İsterseniz tekrar 1 yıla alın.
+    res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(data);
-  });
+
+    return res.sendFile(filePath);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
