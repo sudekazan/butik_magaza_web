@@ -36,7 +36,13 @@ const fetchJSON = async (url) => {
 };
 
 // Görsel URL'ini doğrula ve fallback ekle
-const validateImageUrl = (imageUrl) => {
+const validateImageUrl = (imageUrl, base64ImageUrl = null) => {
+  // Öncelik: Base64 görsel varsa onu kullan (yeni sistem)
+  if (base64ImageUrl && base64ImageUrl.startsWith('data:image/')) {
+    return base64ImageUrl;
+  }
+  
+  // İkinci öncelik: Normal imageUrl
   if (!imageUrl) return 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
   
   // Eğer imageUrl geçerliyse kullan
@@ -275,7 +281,7 @@ const createProductCard = (product, isPanel = false) => {
     : 'group relative bg-white/98 backdrop-blur-sm rounded-3xl overflow-hidden soft-shadow hover:soft-shadow-lg transition-all duration-500 product-card border border-white/40 hover:border-accent-200/60 cursor-pointer h-full flex flex-col hover:scale-105 active:scale-95';
   
   // Görsel URL'ini doğrula
-  const img = validateImageUrl(product.imageUrl);
+  const img = validateImageUrl(product.imageUrl, product.base64ImageUrl);
   
   // Kampanya indirim bilgilerini hesapla
   let campaignDiscount = 0;

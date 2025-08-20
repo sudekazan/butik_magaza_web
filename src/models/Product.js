@@ -34,6 +34,8 @@ const productSchema = new mongoose.Schema(
       }
     ],
     price: { type: Number, required: true },
+    
+    // ===== ESKİ SİSTEM (Geriye dönük uyumluluk için korunuyor) =====
     // Ana görsel (geriye dönük uyumluluk için)
     imageUrl: { type: String, default: '' },
     // Çoklu görseller
@@ -44,6 +46,20 @@ const productSchema = new mongoose.Schema(
         isMain: { type: Boolean, default: false } // Ana görsel olarak işaretlenmiş mi
       }
     ],
+    
+    // ===== YENİ BASE64 SİSTEM =====
+    // Ana görsel Base64 (yeni sistem)
+    base64ImageUrl: { type: String, default: '' },
+    // Çoklu görseller Base64 (yeni sistem)
+    base64Images: [
+      {
+        data: { type: String, required: true }, // Base64 verisi
+        alt: { type: String, default: '' },
+        isMain: { type: Boolean, default: false }, // Ana görsel olarak işaretlenmiş mi
+        mimeType: { type: String, default: 'image/jpeg' } // MIME tipi (image/jpeg, image/png, vb.)
+      }
+    ],
+    
     // Ana ürün renk bilgisi
     mainColor: { type: String, trim: true, default: '' }, // Ana ürün renk adı
     mainColorHex: { type: String, trim: true, default: '#000000' }, // Ana ürün renk kodu

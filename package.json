@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "convert-to-base64": "node convert-to-base64.js"
   },
   "keywords": [
     "butik",

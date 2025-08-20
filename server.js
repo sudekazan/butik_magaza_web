@@ -373,7 +373,7 @@ app.post('/api/uploads/report-error', (req, res) => {
 });
 
 // Upload endpoint
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', upload.single('image'), async (req, res) => {
   try {
     console.log('📤 Upload isteği alındı:', req.file);
     
@@ -385,15 +385,38 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
       });
     }
     
+    // Dosyayı oku ve Base64'e çevir
+    const filePath = req.file.path;
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64Data = fileBuffer.toString('base64');
+    
+    // MIME tipini belirle
+    const mimeType = req.file.mimetype || 'image/jpeg';
+    
+    // Base64 URL formatı oluştur
+    const base64Url = `data:${mimeType};base64,${base64Data}`;
+    
+    // Eski sistem için URL (geriye dönük uyumluluk)
     const imageUrl = `/uploads/${req.file.filename}`;
-    console.log('✅ Görsel başarıyla yüklendi:', imageUrl);
+    
+    console.log('✅ Görsel başarıyla yüklendi ve Base64\'e çevrildi');
+    console.log('📊 Dosya boyutu:', req.file.size, 'bytes');
+    console.log('🔤 MIME tipi:', mimeType);
+    console.log('📏 Base64 uzunluğu:', base64Data.length);
     
     res.json({ 
+      // Eski sistem (geriye dönük uyumluluk)
       imageUrl: imageUrl,
-      message: 'Görsel başarıyla yüklendi',
       filename: req.file.filename,
       size: req.file.size,
-      mimetype: req.file.mimetype
+      mimetype: req.file.mimetype,
+      
+      // Yeni Base64 sistem
+      base64Url: base64Url,
+      base64Data: base64Data,
+      mimeType: mimeType,
+      
+      message: 'Görsel başarıyla yüklendi ve Base64\'e çevrildi'
     });
     
   } catch (error) {

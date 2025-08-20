@@ -210,6 +210,8 @@ router.post('/', verifyToken, upload.fields([
     // Çoklu görsel desteği
     let imageUrl = '';
     let images = [];
+    let base64ImageUrl = '';
+    let base64Images = [];
     
     if (req.files.images && req.files.images.length > 0) {
       // Yeni yüklenen görseller
@@ -219,8 +221,36 @@ router.post('/', verifyToken, upload.fields([
         isMain: index === 0 // İlk görsel ana görsel
       }));
       
+      // Base64 görselleri oluştur
+      base64Images = await Promise.all(req.files.images.map(async (file, index) => {
+        try {
+          const fileBuffer = fs.readFileSync(file.path);
+          const base64Data = fileBuffer.toString('base64');
+          const mimeType = file.mimetype || 'image/jpeg';
+          
+          return {
+            data: base64Data,
+            alt: file.originalname || '',
+            isMain: index === 0,
+            mimeType: mimeType
+          };
+        } catch (error) {
+          console.error('Base64 dönüştürme hatası:', error);
+          return null;
+        }
+      }));
+      
+      // Null değerleri filtrele
+      base64Images = base64Images.filter(img => img !== null);
+      
       // Geriye dönük uyumluluk için ana görseli imageUrl'e ata
       imageUrl = images[0].url;
+      
+      // Base64 ana görseli ata
+      if (base64Images.length > 0) {
+        const mainImage = base64Images.find(img => img.isMain) || base64Images[0];
+        base64ImageUrl = `data:${mainImage.mimeType};base64,${mainImage.data}`;
+      }
     }
     
     // Yeni varyant sistemi işleme - Varyantlar ayrı ürün olarak kaydedilecek
@@ -329,6 +359,8 @@ router.post('/', verifyToken, upload.fields([
       price: Number(price),
       imageUrl, // Geriye dönük uyumluluk
       images, // Yeni çoklu görsel alanı
+      base64ImageUrl, // Yeni Base64 görsel alanı
+      base64Images, // Yeni Base64 görseller alanı
       variants: processedVariants, // Yeni varyant sistemi
       mainColor: mainColor || '', // Ana ürün renk adı
       mainColorHex: mainColorHex || '#000000', // Ana ürün renk kodu
@@ -373,6 +405,32 @@ router.post('/', verifyToken, upload.fields([
     // Varyantları ayrı ürün olarak kaydet
     if (processedVariants.length > 0) {
       for (const variant of processedVariants) {
+        // Varyant için Base64 görselleri oluştur
+        let variantBase64Images = [];
+        let variantBase64ImageUrl = '';
+        
+        if (variant.images && variant.images.length > 0) {
+          try {
+            // Eğer variant.images URL ise, dosyayı okuyup Base64'e çevir
+            if (variant.images[0].startsWith('/uploads/')) {
+              const filePath = path.join(process.cwd(), variant.images[0].replace('/uploads/', ''));
+              if (fs.existsSync(filePath)) {
+                const fileBuffer = fs.readFileSync(filePath);
+                const base64Data = fileBuffer.toString('base64');
+                variantBase64Images = [{
+                  data: base64Data,
+                  alt: `${variant.color} variant image`,
+                  isMain: true,
+                  mimeType: 'image/jpeg' // Varsayılan, gerçek MIME tipi tespit edilebilir
+                }];
+                variantBase64ImageUrl = `data:image/jpeg;base64,${base64Data}`;
+              }
+            }
+          } catch (error) {
+            console.error('Varyant Base64 dönüştürme hatası:', error);
+          }
+        }
+        
         const variantProduct = new Product({
           name: `${created.name} - ${variant.color}`,
           description: created.description,
@@ -384,6 +442,9 @@ router.post('/', verifyToken, upload.fields([
             alt: `${variant.color} variant image`,
             isMain: false
           })) : [],
+          // Base64 görseller
+          base64ImageUrl: variantBase64ImageUrl,
+          base64Images: variantBase64Images,
           stock: variant.stock,
           sizeStocks: variant.sizeStocks || [],
           isVariant: true,
