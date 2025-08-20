@@ -263,21 +263,61 @@ const renderProductImages = () => {
 
 
 // Yardımcı fonksiyonlar
-const setMainImage = (imageId) => {
+const setMainImage = async (imageId) => {
+  // UI durumunu güncelle
   productImages.forEach(img => img.isMain = img.id === imageId);
   renderProductImages();
+  updateImageControls();
+  
+  // Düzenleme modundaysa anında backend’e işle
+  try {
+    if (!editingProductId) return; // yeni ekleme modunda bekle
+    const target = productImages.find(i => i.id === imageId);
+    if (!target) return;
+    const url = target.url || '';
+    if (!url) return; // yeni dosya ise (file), kaydet sırasında yansıyacak
+    const res = await authFetch(`/api/products/${editingProductId}/images/main`, {
+      method: 'PATCH',
+      body: JSON.stringify({ url })
+    });
+    if (!res || !res.ok) {
+      console.error('Ana görsel ayarlanamadı');
+    }
+  } catch (e) {
+    console.error('Ana görsel ayarlanırken hata:', e);
+  }
 };
 
-const removeProductImage = (imageId) => {
+const removeProductImage = async (imageId) => {
   const index = productImages.findIndex(img => img.id === imageId);
-  if (index !== -1) {
-    productImages.splice(index, 1);
-    // Eğer ana görsel silindiyse, ilk görseli ana yap
-    if (productImages.length > 0 && !productImages.some(img => img.isMain)) {
-      productImages[0].isMain = true;
+  if (index === -1) return;
+
+  // Silinecek hedef
+  const target = productImages[index];
+  const wasMain = !!target.isMain;
+  const url = target.url || '';
+
+  // UI’den kaldır
+  productImages.splice(index, 1);
+  if (productImages.length > 0 && !productImages.some(img => img.isMain)) {
+    productImages[0].isMain = true;
+  }
+  renderProductImages();
+  updateImageControls();
+
+  // Düzenleme modunda mevcut URL ise backend’den sil
+  try {
+    if (editingProductId && url) {
+      const res = await authFetch(`/api/products/${editingProductId}/images`, {
+        method: 'DELETE',
+        body: JSON.stringify({ url })
+      });
+      if (!res || !res.ok) {
+        console.error('Görsel silme API başarısız');
+      }
     }
-    renderProductImages();
-    updateImageControls();
+  } catch (e) {
+    console.error('Görsel silinirken hata:', e);
   }
 };
 
@@ -2422,17 +2462,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       
 
       
-      // Çoklu görselleri FormData'ya ekle
+      // Çoklu görselleri ve ana görsel bilgisini FormData'ya ekle
       console.log('Product images:', productImages);
-      if (productImages.length > 0) {
-        // Tüm görselleri images array olarak ekle
-        productImages.forEach((img, index) => {
-          if (img.file) {
-            console.log(`Image ${index} ekleniyor:`, img.file.name, img.file.size, img.file.type);
-            formData.append('images', img.file);
-          } else {
-            console.log(`Image ${index} dosya yok:`, img);
-          }
+      // imagesState: mevcut (url) ve yeni (newIndex) görsellerin nihai sırası ve ana işaretleri
+      const imagesState = [];
+      const newFiles = [];
+      let newIndexCounter = 0;
+      productImages.forEach((img) => {
+        if (img && img.file) {
+          imagesState.push({ newIndex: newIndexCounter, isMain: !!img.isMain, name: img.name || '' });
+          newFiles.push(img.file);
+          newIndexCounter++;
+        } else if (img && img.url) {
+          imagesState.push({ url: img.url, isMain: !!img.isMain });
+        }
+      });
+
+      formData.append('imagesState', JSON.stringify(imagesState));
+
+      // Yeni dosyaları images alanı olarak, oluşturduğumuz sıraya göre ekle
+      if (newFiles.length > 0) {
+        newFiles.forEach((file, idx) => {
+          console.log(`Yeni image ${idx} ekleniyor:`, file.name, file.size, file.type);
+          formData.append('images', file);
         });
       }
 

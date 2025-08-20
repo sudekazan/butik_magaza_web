@@ -41,11 +41,32 @@ const validateImageUrl = (imageUrl) => {
   
   // Eğer imageUrl geçerliyse kullan
   if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('http')) {
+    // Uploads klasöründeki dosyalar için varlık kontrolü yap
+    if (imageUrl.startsWith('/uploads/')) {
+      const filename = imageUrl.replace('/uploads/', '');
+      checkImageExists(filename, imageUrl);
+    }
     return imageUrl;
   }
   
   // Geçersizse fallback döndür
   return 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+};
+
+// Görsel dosyasının varlığını kontrol et
+const checkImageExists = async (filename, imageUrl) => {
+  try {
+    const response = await fetch(`/api/uploads/check/${encodeURIComponent(filename)}`);
+    const data = await response.json();
+    
+    if (!data.exists) {
+      console.warn(`⚠️ Görsel dosyası bulunamadı: ${filename}`);
+      // Hata raporunu gönder
+      reportImageError(imageUrl);
+    }
+  } catch (error) {
+    console.error('❌ Görsel varlık kontrolü hatası:', error);
+  }
 };
 
 // Görsel yükleme hatası için retry mekanizması
@@ -91,6 +112,26 @@ const reportImageError = async (imageUrl) => {
   } catch (error) {
     console.error('❌ Hata raporu gönderilemedi:', error);
   }
+};
+
+// Görsel hata yönetimi fonksiyonu
+const handleImageError = (imgElement, originalSrc) => {
+  console.log('❌ Görsel yükleme hatası:', originalSrc);
+  
+  // Loading state'i gizle
+  const loadingElement = imgElement.previousElementSibling;
+  if (loadingElement) {
+    loadingElement.style.display = 'none';
+  }
+  
+  // Fallback görsel kullan
+  imgElement.src = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  
+  // Hata raporunu gönder
+  reportImageError(originalSrc);
+  
+  // Görsel hata logunu konsola yaz
+  console.warn(`Görsel yüklenemedi: ${originalSrc}, fallback kullanılıyor`);
 };
 
 // Uploads klasörü durumunu kontrol et
@@ -303,7 +344,7 @@ const createProductCard = (product, isPanel = false) => {
           alt="${product.name}" 
           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-20"
           onload="this.previousElementSibling.style.display='none'"
-          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'; this.previousElementSibling.style.display='none';"
+          onerror="handleImageError(this, '${img}')"
         />
         
         <!-- Kampanya İndirim Badge'i -->

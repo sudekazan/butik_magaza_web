@@ -66,11 +66,17 @@ app.use('/uploads', (req, res, next) => {
   // Dosya var mı kontrol et
   if (!fs.existsSync(filePath)) {
     console.log(`❌ Dosya bulunamadı: ${req.path}`);
-    return res.status(404).json({ 
-      error: 'Dosya bulunamadı',
-      path: req.path,
-      message: 'Görsel dosyası bulunamadı'
-    });
+    // Dosya bulunamadığında JSON yerine 404 HTML sayfası döndür
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Görsel Bulunamadı</title></head>
+        <body>
+          <h1>Görsel Bulunamadı</h1>
+          <p>İstenen görsel dosyası bulunamadı: ${req.path}</p>
+        </body>
+      </html>
+    `);
   }
   
   // Dosya türünü belirle
@@ -89,10 +95,16 @@ app.use('/uploads', (req, res, next) => {
   fs.readFile(filePath, (err, data) => {
     if (err) {
       console.error('❌ Dosya okuma hatası:', err);
-      return res.status(500).json({ 
-        error: 'Dosya okunamadı',
-        message: 'Görsel dosyası okunamadı'
-      });
+      return res.status(500).send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Görsel Okunamadı</title></head>
+          <body>
+            <h1>Görsel Okunamadı</h1>
+            <p>Görsel dosyası okunamadı: ${req.path}</p>
+          </body>
+        </html>
+      `);
     }
     
     res.setHeader('Content-Type', contentType);
@@ -187,6 +199,38 @@ app.get('/api/uploads/health', (req, res) => {
   }
 });
 
+// Dosya varlık kontrolü endpoint'i
+app.get('/api/uploads/check/:filename(*)', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, 'uploads', filename);
+    
+    if (fs.existsSync(filePath)) {
+      const stats = fs.statSync(filePath);
+      res.json({
+        exists: true,
+        filename: filename,
+        size: stats.size,
+        created: stats.birthtime,
+        modified: stats.mtime,
+        path: filePath
+      });
+    } else {
+      res.json({
+        exists: false,
+        filename: filename,
+        message: 'Dosya bulunamadı'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Dosya kontrol hatası:', error);
+    res.status(500).json({
+      error: 'Dosya kontrol edilemedi',
+      message: error.message
+    });
+  }
+});
+
 // Uploads klasörü debug endpoint'i
 app.get('/api/uploads/debug', (req, res) => {
   try {
@@ -195,7 +239,7 @@ app.get('/api/uploads/debug', (req, res) => {
     
     // İlk 10 dosyayı detaylı bilgi ile listele
     const fileDetails = files.slice(0, 10).map(filename => {
-      const filePath = path.join(uploadsDir, filename);
+      const filePath = path.join(__dirname, 'uploads', filename);
       const stats = fs.statSync(filePath);
       return {
         filename,

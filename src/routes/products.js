@@ -431,34 +431,94 @@ router.put('/:id', verifyToken, upload.fields([
     
 
     
-    // Çoklu görsel desteği
-    if (req.files.images && req.files.images.length > 0) {
-      // Yeni yüklenen görseller
-      const newImages = req.files.images.map((file, index) => ({
-        url: `/uploads/${file.filename}`,
-        name: file.originalname,
-        isMain: false // Yeni eklenen görseller ana görsel olmaz
-      }));
+    // Çoklu görsel desteği: imagesState ile nihai listeyi kur
+    const currentProduct = await Product.findById(id);
+    const prevImages = currentProduct?.images || [];
+    const uploadedNewFiles = (req.files.images || []).map((file) => ({
+      url: `/uploads/${file.filename}`,
+      name: file.originalname,
+      isMain: false
+    }));
+
+    // Frontend'in gönderdiği nihai durum
+    let imagesState = null;
+    if (req.body.imagesState) {
+      try {
+        imagesState = JSON.parse(req.body.imagesState);
+      } catch (e) {
+        console.warn('imagesState parse hatası:', e);
+      }
+    }
+
+    if (Array.isArray(imagesState)) {
+      // Eski dosyalar: URL bazlı eşleştir; Yeni dosyalar: newIndex ile uploadedNewFiles’dan al
+      const finalImages = [];
+      const urlsKept = new Set();
+
+      imagesState.forEach((item) => {
+        if (item && typeof item.newIndex === 'number') {
+          const picked = uploadedNewFiles[item.newIndex];
+          if (picked) {
+            finalImages.push({ ...picked, isMain: !!item.isMain });
+          }
+        } else if (item && typeof item.url === 'string') {
+          const normalized = String(item.url).match(/\/uploads\/[^'" )]+/);
+          const url = normalized ? normalized[0] : String(item.url);
+          const found = prevImages.find((im) => im && im.url === url);
+          if (found && !urlsKept.has(url)) {
+            finalImages.push({ ...found.toObject?.() || found, isMain: !!item.isMain });
+            urlsKept.add(url);
+          } else if (url && url.startsWith('/uploads/') && !urlsKept.has(url)) {
+            finalImages.push({ url, isMain: !!item.isMain }); // legacy imageUrl fallback
+            urlsKept.add(url);
+          }
+        }
+      });
+
+      // En az bir görsel varsa ana görseli belirle
+      if (finalImages.length > 0) {
+        if (!finalImages.some((im) => im.isMain)) {
+          finalImages[0].isMain = true;
+        }
+        update.images = finalImages;
+        const main = finalImages.find((im) => im.isMain) || finalImages[0];
+        update.imageUrl = main.url;
+      } else {
+        update.images = [];
+        update.imageUrl = '';
+      }
+
+            // Silinen dosyaları fiziksel olarak temizle (sadece önceki ve artık listede olmayan /uploads/ olanlar)
+            const finalUrls = new Set(finalImages.map((im) => im.url).filter((u) => typeof u === 'string'));
+            for (const old of prevImages) {
+              if (!old || !old.url) continue;
+              if (!finalUrls.has(old.url) && old.url.startsWith('/uploads/')) {
+                const safeRelative = old.url.replace(/^\//, '');
+                const oldPath = path.join(process.cwd(), safeRelative);
+                fs.unlink(oldPath, (err) => {
+                  if (err) console.error('Ürün resmi silinirken hata:', err);
+                });
+              }
+            }
       
-      // Mevcut görselleri al
-      const currentProduct = await Product.findById(id);
-      const existingImages = currentProduct.images || [];
-      
-      // Mevcut görsellere yeni görselleri ekle
-      const allImages = [...existingImages, ...newImages];
-      
-      // Eğer hiç ana görsel yoksa, ilk görseli ana yap
-      if (!allImages.some(img => img.isMain) && allImages.length > 0) {
+            // Legacy tekil imageUrl için fiziksel silme (prevImages boşsa ve imageUrl final listede yoksa)
+            const legacyUrl = currentProduct?.imageUrl;
+            if ((!prevImages || prevImages.length === 0) && legacyUrl && legacyUrl.startsWith('/uploads/') && !finalUrls.has(legacyUrl)) {
+              const safeRelative = legacyUrl.replace(/^\//, '');
+              const oldPath = path.join(process.cwd(), safeRelative);
+              fs.unlink(oldPath, (err) => {
+                if (err) console.error('Legacy ürün resmi silinirken hata:', err);
+              });
+            }
+    } else if (uploadedNewFiles.length > 0) {
+      // imagesState yoksa: mevcutları koru, yenileri sona ekle (mevcut davranış)
+      const allImages = [...prevImages, ...uploadedNewFiles];
+      if (!allImages.some((im) => im.isMain) && allImages.length > 0) {
         allImages[0].isMain = true;
       }
-      
       update.images = allImages;
-      
-      // Ana görseli güncelle (ana görsel varsa onu kullan, yoksa ilkini)
-      const mainImage = allImages.find(img => img.isMain) || allImages[0];
-      if (mainImage) {
-        update.imageUrl = mainImage.url; // Geriye dönük uyumluluk
-      }
+      const mainImage = allImages.find((im) => im.isMain) || allImages[0];
+      if (mainImage) update.imageUrl = mainImage.url;
     }
     
     // Yeni varyant sistemi işleme
@@ -921,6 +981,113 @@ router.delete('/:id', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Ürün silinirken hata:', err);
     res.status(500).json({ message: 'Ürün silinemedi', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+  }
+});
+
+// Tek görsel işlemleri: Ana görseli ayarla
+router.patch('/:id/images/main', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body || {};
+    if (!id || !url) return res.status(400).json({ message: 'ID ve url gerekli' });
+
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: 'Ürün bulunamadı' });
+
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      let matched = false;
+      const normalizedTarget = String(url).match(/\/uploads\/[^'" )]+/);
+      const targetUrl = normalizedTarget ? normalizedTarget[0] : String(url);
+      product.images = product.images.map((im) => {
+        if (!im) return im;
+        const imUrl = String(im.url || '');
+        const same = imUrl === targetUrl;
+        if (same) matched = true;
+        return { ...im.toObject?.() || im, isMain: same };
+      });
+      if (!matched && targetUrl) {
+        if (product.imageUrl && product.imageUrl === targetUrl) {
+          product.images.unshift({ url: targetUrl, isMain: true });
+          matched = true;
+        }
+      }
+      if (product.images.length > 0) {
+        const main = product.images.find((im) => im && im.isMain) || product.images[0];
+        product.imageUrl = main?.url || '';
+      } else if (product.imageUrl) {
+        product.imageUrl = product.imageUrl;
+      }
+      await product.save();
+      return res.json({ success: true, product });
+    }
+
+    const normalizedTarget = String(url).match(/\/uploads\/[^'" )]+/);
+    const targetUrl = normalizedTarget ? normalizedTarget[0] : String(url);
+    if (product.imageUrl && product.imageUrl === targetUrl) {
+      return res.json({ success: true, product });
+    }
+    product.imageUrl = targetUrl;
+    await product.save();
+    return res.json({ success: true, product });
+  } catch (err) {
+    console.error('Ana görsel ayarlanırken hata:', err);
+    res.status(500).json({ message: 'Ana görsel ayarlanamadı' });
+  }
+});
+
+// Tek görsel işlemleri: Görsel sil
+router.delete('/:id/images', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body || {};
+    if (!id || !url) return res.status(400).json({ message: 'ID ve url gerekli' });
+
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: 'Ürün bulunamadı' });
+
+    const normalizedTarget = String(url).match(/\/uploads\/[^'" )]+/);
+    const targetUrl = normalizedTarget ? normalizedTarget[0] : String(url);
+
+    let removed = false;
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      const before = product.images.length;
+      const wasMain = product.images.some((im) => im && im.url === targetUrl && im.isMain);
+      product.images = product.images.filter((im) => im && im.url !== targetUrl);
+      removed = product.images.length < before;
+
+      if (wasMain && product.images.length > 0) {
+        product.images = product.images.map((im, idx) => ({ ...im.toObject?.() || im, isMain: idx === 0 }));
+        product.imageUrl = product.images[0]?.url || '';
+      }
+
+      if (product.images.length === 0) {
+        product.imageUrl = '';
+      } else if (!product.images.some((im) => im && im.isMain)) {
+        product.images[0].isMain = true;
+        product.imageUrl = product.images[0]?.url || '';
+      }
+    } else if (product.imageUrl) {
+      if (product.imageUrl === targetUrl) {
+        product.imageUrl = '';
+        removed = true;
+      }
+    }
+
+    if (!removed) return res.status(404).json({ message: 'Silinecek görsel bulunamadı' });
+
+    if (targetUrl && targetUrl.startsWith('/uploads/')) {
+      const safeRelative = targetUrl.replace(/^\//, '');
+      const oldPath = path.join(process.cwd(), safeRelative);
+      fs.unlink(oldPath, (err) => {
+        if (err) console.error('Görsel fiziksel silinirken hata:', err);
+      });
+    }
+
+    await product.save();
+    res.json({ success: true, product });
+  } catch (err) {
+    console.error('Görsel silinirken hata:', err);
+    res.status(500).json({ message: 'Görsel silinemedi' });
   }
 });
 
