@@ -35,10 +35,85 @@ const fetchJSON = async (url) => {
   }
 };
 
+// Görsel URL'ini doğrula ve fallback ekle
+const validateImageUrl = (imageUrl) => {
+  if (!imageUrl) return 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  
+  // Eğer imageUrl geçerliyse kullan
+  if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  
+  // Geçersizse fallback döndür
+  return 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+};
+
+// Görsel yükleme hatası için retry mekanizması
+const loadImageWithRetry = (imgElement, imageUrl, maxRetries = 2) => {
+  let retryCount = 0;
+  
+  const tryLoad = () => {
+    imgElement.src = imageUrl;
+  };
+  
+  imgElement.onerror = () => {
+    if (retryCount < maxRetries) {
+      retryCount++;
+      console.log(`🔄 Görsel yükleme hatası, ${retryCount}. deneme:`, imageUrl);
+      setTimeout(tryLoad, 1000 * retryCount); // Her denemede daha uzun bekle
+    } else {
+      console.log('❌ Görsel yüklenemedi, fallback kullanılıyor:', imageUrl);
+      imgElement.src = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+      
+      // Hata raporunu sunucuya gönder
+      reportImageError(imageUrl);
+    }
+  };
+  
+  tryLoad();
+};
+
+// Görsel yükleme hatalarını raporla
+const reportImageError = async (imageUrl) => {
+  try {
+    await fetch('/api/uploads/report-error', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        imageUrl,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        page: window.location.href
+      })
+    });
+  } catch (error) {
+    console.error('❌ Hata raporu gönderilemedi:', error);
+  }
+};
+
+// Uploads klasörü durumunu kontrol et
+const checkUploadsHealth = async () => {
+  try {
+    const response = await fetch('/api/uploads/health');
+    const data = await response.json();
+    
+    if (data.status === 'healthy') {
+      console.log('✅ Uploads klasörü sağlıklı:', data.fileCount, 'dosya');
+    } else {
+      console.warn('⚠️ Uploads klasörü sorunlu:', data.message);
+    }
+  } catch (error) {
+    console.error('❌ Uploads health check başarısız:', error);
+  }
+};
+
 
 
 const createCategoryCard = (category) => {
-  const img = category.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  // Görsel URL'ini doğrula
+  const img = validateImageUrl(category.imageUrl);
   
   return `
     <a href="/category?id=${category._id}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left category-card bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60 block hover:scale-105 transform" data-category-id="${category._id}">
@@ -145,7 +220,8 @@ const createProductCard = (product, isPanel = false) => {
     ? 'group relative bg-white/98 backdrop-blur-sm rounded-2xl overflow-hidden soft-shadow hover:soft-shadow-lg transition-all duration-500 product-card border border-white/40 hover:border-accent-200/60 cursor-pointer flex flex-col hover:scale-105 active:scale-95'
     : 'group relative bg-white/98 backdrop-blur-sm rounded-3xl overflow-hidden soft-shadow hover:soft-shadow-lg transition-all duration-500 product-card border border-white/40 hover:border-accent-200/60 cursor-pointer h-full flex flex-col hover:scale-105 active:scale-95';
   
-  const img = product.imageUrl ? product.imageUrl : 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  // Görsel URL'ini doğrula
+  const img = validateImageUrl(product.imageUrl);
   
   // Kampanya indirim bilgilerini hesapla
   let campaignDiscount = 0;
@@ -216,7 +292,19 @@ const createProductCard = (product, isPanel = false) => {
   return `
     <div class="${cardClass}" onclick="handleProductClick('${product._id}', '${product.name || 'Ürün'}')">
       <div class="overflow-hidden relative ${isPanelView ? 'h-32' : ''}">
-        <img src="${img}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        <!-- Loading State -->
+        <div class="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center z-10">
+          <div class="w-8 h-8 border-4 border-gray-300 border-t-accent-500 rounded-full animate-spin"></div>
+        </div>
+        
+        <!-- Image with Error Handling -->
+        <img 
+          src="${img}" 
+          alt="${product.name}" 
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-20"
+          onload="this.previousElementSibling.style.display='none'"
+          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'; this.previousElementSibling.style.display='none';"
+        />
         
         <!-- Kampanya İndirim Badge'i -->
         ${campaignDiscount > 0 ? `
@@ -803,6 +891,9 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', async () => {
   // Başlangıç durumunu ayarla
   // Ana sayfada ürün gösterimi kaldırıldı
+  
+  // Uploads klasörü durumunu kontrol et
+  checkUploadsHealth();
   
   // Kategorileri ve ürünleri yükle
   await Promise.all([

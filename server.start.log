@@ -1,19 +1,48 @@
-node:internal/modules/package_json_reader:113
-  const parsed = modulesBinding.readPackageJSON(
-                                ^
-
-Error: Invalid package config /Users/sudekazan/Desktop/web/satın_almasız_web_sitesi/node_modules/send/node_modules/encodeurl/package.json.
-    at Object.read (node:internal/modules/package_json_reader:113:33)
-    at _readPackage (node:internal/modules/cjs/loader:482:55)
-    at resolveExports (node:internal/modules/cjs/loader:667:15)
-    at Module._findPath (node:internal/modules/cjs/loader:738:31)
-    at Module._resolveFilename (node:internal/modules/cjs/loader:1396:27)
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1051:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1056:22)
-    at Module._load (node:internal/modules/cjs/loader:1219:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:238:24) {
-  code: 'ERR_INVALID_PACKAGE_CONFIG'
-}
-
-Node.js v24.5.0
+✅ Kalıcı şifre dosyasından yüklendi
+MongoDB bağlantısı başarılı
+🚀 Server çalışıyor: http://localhost:3000
+📁 Uploads: /Users/sudekazan/Desktop/web/satın_almasız_web_sitesi/uploads
+🌍 Environment: development
+[0mGET / [32m200[0m 8.759 ms - 59631[0m
+[0mGET /js/dialog.js [36m304[0m 0.780 ms - -[0m
+[0mGET /js/app.js [36m304[0m 0.248 ms - -[0m
+[0mGET /js/config.js [36m304[0m 0.365 ms - -[0m
+[0mGET /api/campaigns [32m200[0m 145.519 ms - 2[0m
+[0mGET /api/categories [32m200[0m 179.893 ms - 1203[0m
+[0mGET /api/featured-products [32m200[0m 181.653 ms - 5406[0m
+[0mGET /uploads/cat_1755341043497_17.jpeg [36m304[0m 0.518 ms - -[0m
+[0mGET /uploads/cat_1755340994829_14.jpeg [36m304[0m 1.045 ms - -[0m
+[0mGET /uploads/cat_1755340938576_11.jpeg [36m304[0m 0.838 ms - -[0m
+[0mGET /uploads/cat_1755337385708_5.jpeg [36m304[0m 0.996 ms - -[0m
+[0mGET /uploads/cat_1755340975356_16.jpeg [36m304[0m 0.214 ms - -[0m
+[0mGET /uploads/cat_1755191652056_1.jpeg [36m304[0m 0.203 ms - -[0m
+[0mGET /uploads/1755193045375_7.jpeg [36m304[0m 0.220 ms - -[0m
+[0mGET /uploads/1755195358586_15.jpeg [36m304[0m 0.182 ms - -[0m
+[0mGET /uploads/1755193702926_10.jpeg [36m304[0m 0.229 ms - -[0m
+[0mGET /uploads/1755194987958_12.jpeg [36m304[0m 0.256 ms - -[0m
+[0mGET /api/categories [36m304[0m 2.395 ms - -[0m
+[0mGET /api/health [32m200[0m 1.150 ms - 54[0m
+[0mGET / [32m200[0m 20.866 ms - 59631[0m
+[0mGET /js/dialog.js [36m304[0m 3.793 ms - -[0m
+[0mGET /js/app.js [36m304[0m 0.554 ms - -[0m
+[0mGET /js/config.js [36m304[0m 0.530 ms - -[0m
+[0mGET /apple-touch-icon-precomposed.png [33m404[0m 23.676 ms - 31[0m
+[0mGET /apple-touch-icon.png [33m404[0m 0.545 ms - 31[0m
+[0mGET /favicon.ico [33m404[0m 0.679 ms - 31[0m
+[0mGET /api/categories [32m200[0m 634.154 ms - 1203[0m
+[0mGET /uploads/cat_1755340994829_14.jpeg [36m304[0m 0.493 ms - -[0m
+[0mGET /uploads/cat_1755341043497_17.jpeg [36m304[0m 0.412 ms - -[0m
+[0mGET /uploads/cat_1755337385708_5.jpeg [36m304[0m 0.455 ms - -[0m
+[0mGET /uploads/cat_1755340938576_11.jpeg [36m304[0m 0.092 ms - -[0m
+[0mGET /uploads/cat_1755340975356_16.jpeg [36m304[0m 0.284 ms - -[0m
+[0mGET /uploads/cat_1755191652056_1.jpeg [36m304[0m 0.238 ms - -[0m
+[0mGET /api/campaigns [32m200[0m 603.749 ms - 2[0m
+[0mGET /api/featured-products [32m200[0m 655.510 ms - 5406[0m
+[0mGET /uploads/1755194987958_12.jpeg [36m304[0m 3.053 ms - -[0m
+[0mGET /uploads/1755195358586_15.jpeg [36m304[0m 2.240 ms - -[0m
+[0mGET /uploads/1755193045375_7.jpeg [36m304[0m 1.664 ms - -[0m
+[0mGET /uploads/1755193702926_10.jpeg [36m304[0m 1.586 ms - -[0m
+[0mGET /api/categories [36m304[0m 6.216 ms - -[0m
+[0mGET /api/uploads/health [33m404[0m 20.966 ms - 31[0m
+[0mGET /api/uploads/health [33m404[0m 2.302 ms - 31[0m
+SIGTERM sinyali alındı, sunucu kapatılıyor...

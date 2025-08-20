@@ -59,8 +59,49 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static files - Uploads klasörü için özel middleware
+app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(__dirname, 'uploads', req.path);
+  
+  // Dosya var mı kontrol et
+  if (!fs.existsSync(filePath)) {
+    console.log(`❌ Dosya bulunamadı: ${req.path}`);
+    return res.status(404).json({ 
+      error: 'Dosya bulunamadı',
+      path: req.path,
+      message: 'Görsel dosyası bulunamadı'
+    });
+  }
+  
+  // Dosya türünü belirle
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp'
+  };
+  
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+  
+  // Dosyayı oku ve gönder
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error('❌ Dosya okuma hatası:', err);
+      return res.status(500).json({ 
+        error: 'Dosya okunamadı',
+        message: 'Görsel dosyası okunamadı'
+      });
+    }
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 yıl cache
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(data);
+  });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Frontend routes
@@ -120,6 +161,99 @@ app.post('/api/upload-test', (req, res) => {
     message: 'Test endpoint çalışıyor',
     timestamp: new Date().toISOString()
   });
+});
+
+// Uploads klasörü health check
+app.get('/api/uploads/health', (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const files = fs.readdirSync(uploadsDir);
+    
+    res.json({
+      status: 'healthy',
+      uploadsDir: uploadsDir,
+      fileCount: files.length,
+      timestamp: new Date().toISOString(),
+      message: 'Uploads klasörü erişilebilir'
+    });
+  } catch (error) {
+    console.error('❌ Uploads health check hatası:', error);
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      message: 'Uploads klasörü erişilemiyor'
+    });
+  }
+});
+
+// Uploads klasörü debug endpoint'i
+app.get('/api/uploads/debug', (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const files = fs.readdirSync(uploadsDir);
+    
+    // İlk 10 dosyayı detaylı bilgi ile listele
+    const fileDetails = files.slice(0, 10).map(filename => {
+      const filePath = path.join(uploadsDir, filename);
+      const stats = fs.statSync(filePath);
+      return {
+        filename,
+        size: stats.size,
+        created: stats.birthtime,
+        modified: stats.mtime,
+        path: filePath
+      };
+    });
+    
+    res.json({
+      status: 'debug',
+      uploadsDir: uploadsDir,
+      totalFiles: files.length,
+      sampleFiles: fileDetails,
+      timestamp: new Date().toISOString(),
+      message: 'Uploads klasörü debug bilgileri'
+    });
+  } catch (error) {
+    console.error('❌ Uploads debug hatası:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      message: 'Uploads klasörü debug bilgileri alınamadı'
+    });
+  }
+});
+
+// Görsel yükleme hatalarını raporla
+app.post('/api/uploads/report-error', (req, res) => {
+  try {
+    const { imageUrl, timestamp, userAgent, page } = req.body;
+    
+    console.log('❌ Görsel yükleme hatası raporlandı:', {
+      imageUrl,
+      timestamp,
+      userAgent: userAgent?.substring(0, 100),
+      page
+    });
+    
+    // Hata logunu dosyaya yaz
+    const errorLog = `${timestamp} | ${imageUrl} | ${page} | ${userAgent?.substring(0, 100)}\n`;
+    const logFile = path.join(__dirname, 'image-errors.log');
+    
+    fs.appendFileSync(logFile, errorLog);
+    
+    res.json({ 
+      message: 'Hata raporu alındı',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Hata raporu işlenirken hata:', error);
+    res.status(500).json({ 
+      message: 'Hata raporu işlenemedi',
+      error: error.message
+    });
+  }
 });
 
 // Upload endpoint
