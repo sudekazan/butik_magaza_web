@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env/Secrets
+.env
+admin-password.txt
+
+# OS/Editor
+.DS_Store
+.cursorignore
+.cursorrules
+
+# Uploads and runtime logs
+uploads/
+server.start.log
+tmp.run.log
+*.log
+
+
