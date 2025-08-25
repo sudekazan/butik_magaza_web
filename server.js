@@ -77,7 +77,13 @@ const upload = multer({
 });
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: true, // Tüm origin'lere izin ver
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  exposedHeaders: ['Content-Range', 'X-Image-Info']
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -88,7 +94,10 @@ app.use('/uploads', (req, res, next) => {
     const requested = decodeURIComponent(req.path || '');
     const safe = String(requested).replace(/^\/+/, '');
     if (safe.includes('..')) {
-      return res.status(400).send('Geçersiz dosya yolu');
+      return res.status(400).json({ 
+        error: 'Geçersiz dosya yolu',
+        message: 'Directory traversal engellendi'
+      });
     }
 
     const filePath = getUploadsPath(safe);
@@ -97,33 +106,87 @@ app.use('/uploads', (req, res, next) => {
     if (!filePath || !fs.existsSync(filePath)) {
       console.log(`❌ Dosya bulunamadı: ${requested}`);
       console.log(`🔍 Aranan yol: ${filePath}`);
-      console.log(`📁 Mevcut uploads klasörleri:`);
-      console.log(`   - __dirname: ${path.join(__dirname, 'uploads')}`);
-      console.log(`   - process.cwd: ${path.join(process.cwd(), 'uploads')}`);
-
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html>
-          <head><title>Görsel Bulunamadı</title></head>
-          <body>
-            <h1>Görsel Bulunamadı</h1>
-            <p>İstenen görsel dosyası bulunamadı: ${requested}</p>
-            <p>Aranan yol: ${filePath}</p>
-          </body>
-        </html>
-      `);
+      
+      // JSON hata döndür
+      return res.status(404).json({ 
+        error: 'Görsel bulunamadı',
+        filename: requested,
+        message: 'İstenen görsel dosyası bulunamadı',
+        timestamp: new Date().toISOString()
+      });
     }
 
-    // İçerik türünü belirle
-    const contentType = mime.lookup(filePath) || 'application/octet-stream';
-    res.setHeader('Content-Type', contentType);
-    // Daha az agresif cache: 1 gün (stale görselleri azaltır). İsterseniz tekrar 1 yıla alın.
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Dosya boyutunu kontrol et
+    const stats = fs.statSync(filePath);
+    if (stats.size === 0) {
+      return res.status(400).json({ 
+        error: 'Boş dosya',
+        filename: requested,
+        message: 'Dosya boş veya bozuk'
+      });
+    }
 
-    return res.sendFile(filePath);
+    // MIME tipini daha güvenilir şekilde belirle
+    let contentType = mime.lookup(filePath);
+    
+    // Eğer mime.lookup başarısız olursa, dosya uzantısına göre belirle
+    if (!contentType) {
+      const ext = path.extname(filePath).toLowerCase();
+      switch (ext) {
+        case '.jpg':
+        case '.jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case '.png':
+          contentType = 'image/png';
+          break;
+        case '.gif':
+          contentType = 'image/gif';
+          break;
+        case '.webp':
+          contentType = 'image/webp';
+          break;
+        default:
+          contentType = 'application/octet-stream';
+      }
+    }
+
+    // Headers'ları ayarla
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 yıl cache
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Range');
+    
+    // Range request desteği (büyük dosyalar için)
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+      const chunksize = (end - start) + 1;
+      
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`);
+      res.setHeader('Accept-Ranges', 'bytes');
+      
+      const stream = fs.createReadStream(filePath, { start, end });
+      return stream.pipe(res);
+    }
+
+    // Normal dosya gönderimi
+    return res.sendFile(filePath, {
+      headers: {
+        'X-Image-Info': `size:${stats.size}, type:${contentType}`
+      }
+    });
   } catch (err) {
-    return next(err);
+    console.error('❌ Uploads middleware hatası:', err);
+    return res.status(500).json({ 
+      error: 'Sunucu hatası',
+      message: 'Görsel yüklenirken hata oluştu'
+    });
   }
 });
 
@@ -443,6 +506,59 @@ app.use((error, req, res, next) => {
 
 // Healthcheck
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// Görsel test endpoint'i - Content-Type ve performans testi
+app.get('/api/uploads/test/:filename(*)', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = getUploadsPath(filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        error: 'Dosya bulunamadı',
+        filename: filename,
+        message: 'Test edilecek dosya mevcut değil'
+      });
+    }
+    
+    const stats = fs.statSync(filePath);
+    const contentType = mime.lookup(filePath) || 'application/octet-stream';
+    
+    // Dosya başlığını oku (ilk 512 byte)
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(512);
+    const bytesRead = fs.readSync(fd, buffer, 0, 512, 0);
+    fs.closeSync(fd);
+    
+    const header = buffer.toString('hex', 0, bytesRead);
+    
+    // Dosya türü tespiti
+    let detectedType = 'unknown';
+    if (header.startsWith('ffd8ff')) detectedType = 'JPEG';
+    else if (header.startsWith('89504e47')) detectedType = 'PNG';
+    else if (header.startsWith('47494638')) detectedType = 'GIF';
+    else if (header.startsWith('52494646') && header.includes('57454250')) detectedType = 'WebP';
+    
+    res.json({
+      filename: filename,
+      filePath: filePath,
+      size: stats.size,
+      contentType: contentType,
+      detectedType: detectedType,
+      header: header.substring(0, 32) + '...',
+      created: stats.birthtime,
+      modified: stats.mtime,
+      message: 'Görsel dosya test bilgileri'
+    });
+    
+  } catch (error) {
+    console.error('❌ Görsel test hatası:', error);
+    res.status(500).json({
+      error: 'Test hatası',
+      message: error.message
+    });
+  }
+});
 
 // Global error handler
 app.use((err, req, res, next) => {
