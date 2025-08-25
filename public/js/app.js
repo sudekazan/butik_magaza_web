@@ -59,6 +59,85 @@ const validateImageUrl = (imageUrl, base64ImageUrl = null) => {
   return 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
 };
 
+// Görsel yükleme için gelişmiş fonksiyon
+const loadImageWithAdvancedHandling = async (imgElement, imageUrl, options = {}) => {
+  const {
+    maxRetries = 3,
+    retryDelay = 1000,
+    timeout = 10000,
+    fallbackUrl = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'
+  } = options;
+
+  let retryCount = 0;
+  
+  const tryLoad = async () => {
+    try {
+      // Timeout ile fetch kullan
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(imageUrl, {
+        method: 'GET',
+        signal: controller.abortSignal,
+        headers: {
+          'Accept': 'image/*'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      // Content-Type kontrolü
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        console.warn(`⚠️ Yanlış Content-Type: ${contentType} for ${imageUrl}`);
+        throw new Error(`Yanlış MIME tipi: ${contentType}`);
+      }
+      
+      // Blob olarak al ve URL oluştur
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Görsel yüklendi
+      imgElement.src = objectUrl;
+      imgElement.onload = () => {
+        URL.revokeObjectURL(objectUrl); // Memory leak'i önle
+        if (imgElement.previousElementSibling) {
+          imgElement.previousElementSibling.style.display = 'none';
+        }
+      };
+      
+      return true;
+      
+    } catch (error) {
+      console.warn(`❌ Görsel yükleme hatası (${retryCount + 1}/${maxRetries}):`, error.message);
+      
+      if (retryCount < maxRetries - 1) {
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, retryDelay * retryCount));
+        return false; // Tekrar dene
+      } else {
+        // Tüm denemeler başarısız, fallback kullan
+        console.error('❌ Görsel yüklenemedi, fallback kullanılıyor:', imageUrl);
+        imgElement.src = fallbackUrl;
+        if (imgElement.previousElementSibling) {
+          imgElement.previousElementSibling.style.display = 'none';
+        }
+        reportImageError(imageUrl);
+        return true;
+      }
+    }
+  };
+  
+  // İlk denemeyi başlat
+  while (!(await tryLoad())) {
+    // Retry loop
+  }
+};
+
 // Görsel dosyasının varlığını kontrol et
 const checkImageExists = async (filename, imageUrl) => {
   try {
@@ -142,15 +221,23 @@ const handleImageError = (imgElement, originalSrc) => {
     loadingElement.style.display = 'none';
   }
   
-  // Fallback görsel kullan
-  imgElement.src = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  // Gelişmiş görsel yükleme dene
+  if (originalSrc && originalSrc.startsWith('/uploads/')) {
+    loadImageWithAdvancedHandling(imgElement, originalSrc, {
+      maxRetries: 2,
+      retryDelay: 500
+    });
+  } else {
+    // Fallback görsel kullan
+    imgElement.src = 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  }
   
   // Hata raporunu sadece bir kez gönder
   imgElement.dataset.errorReported = 'true';
   reportImageError(originalSrc);
   
   // Görsel hata logunu konsola yaz
-  console.warn(`Görsel yüklenemedi: ${originalSrc}, fallback kullanılıyor`);
+  console.warn(`Görsel yüklenemedi: ${originalSrc}, gelişmiş yükleme deneniyor`);
 };
 
 // Uploads klasörü durumunu kontrol et
@@ -168,6 +255,51 @@ const checkUploadsHealth = async () => {
     console.error('❌ Uploads health check başarısız:', error);
   }
 };
+
+// Görsel performans izleme
+const monitorImagePerformance = () => {
+  const images = document.querySelectorAll('img');
+  let loadedCount = 0;
+  let errorCount = 0;
+  let totalSize = 0;
+  
+  images.forEach(img => {
+    if (img.complete) {
+      loadedCount++;
+      if (img.naturalWidth > 0) {
+        totalSize += img.naturalWidth * img.naturalHeight;
+      }
+    } else {
+      img.addEventListener('load', () => {
+        loadedCount++;
+        if (img.naturalWidth > 0) {
+          totalSize += img.naturalWidth * img.naturalHeight;
+        }
+      });
+      
+      img.addEventListener('error', () => {
+        errorCount++;
+        console.warn('❌ Görsel yükleme hatası:', img.src);
+      });
+    }
+  });
+  
+  // Performans bilgilerini logla
+  setTimeout(() => {
+    console.log('📊 Görsel Performans Raporu:', {
+      toplamGorsel: images.length,
+      yuklenen: loadedCount,
+      hatali: errorCount,
+      basariliOran: `${((loadedCount / images.length) * 100).toFixed(1)}%`,
+      toplamPiksel: totalSize.toLocaleString()
+    });
+  }, 2000);
+};
+
+// Sayfa yüklendiğinde performans izlemeyi başlat
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(monitorImagePerformance, 1000);
+});
 
 
 
@@ -189,7 +321,9 @@ const createCategoryCard = (category) => {
           alt="${category.name}" 
           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-10"
           onload="this.previousElementSibling.style.display='none'"
-          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'; this.previousElementSibling.style.display='none';"
+          onerror="handleImageError(this, '${img}')"
+          loading="lazy"
+          decoding="async"
         />
         
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-20"></div>
@@ -364,6 +498,8 @@ const createProductCard = (product, isPanel = false) => {
           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-20"
           onload="this.previousElementSibling.style.display='none'"
           onerror="handleImageError(this, '${img}')"
+          loading="lazy"
+          decoding="async"
         />
         
         <!-- Kampanya İndirim Badge'i -->
