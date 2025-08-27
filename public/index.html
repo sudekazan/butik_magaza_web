@@ -605,9 +605,27 @@
           </p>
         </div>
 
-        <!-- Öne Çıkan Ürünler Grid -->
-        <div id="featuredProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 mb-12 sm:mb-16">
-          <!-- Ürünler JavaScript ile yüklenecek -->
+        <!-- Öne Çıkan Ürünler Slider -->
+        <div id="featuredProductsGrid" class="relative mb-12 sm:mb-16">
+          <!-- Nav Buttons -->
+          <button id="featuredPrevBtn" aria-label="Önceki" class="hidden md:flex absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur border border-white/40 shadow hover:shadow-md hover:bg-white transition-all items-center justify-center">
+            <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button id="featuredNextBtn" aria-label="Sonraki" class="hidden md:flex absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur border border-white/40 shadow hover:shadow-md hover:bg-white transition-all items-center justify-center">
+            <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+
+          <!-- Slider viewport -->
+          <div class="overflow-hidden">
+            <div id="featuredSlider" class="flex gap-4 sm:gap-6 transition-transform duration-500 will-change-transform">
+              <!-- Slides JS ile eklenecek -->
+            </div>
+          </div>
+
+          <!-- Dots -->
+          <div id="featuredDots" class="mt-6 flex items-center justify-center gap-2">
+            <!-- Dots JS ile eklenecek -->
+          </div>
         </div>
 
         <!-- View All Products Button -->

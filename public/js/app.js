@@ -2112,14 +2112,15 @@ const getFeaturedSlideWidth = () => {
 };
 
 // Öne çıkan ürünler için özel kart oluştur
-const createFeaturedProductCard = (product) => {
+const createFeaturedProductCard = (product, isSlider = true) => {
   const img = product.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
   const hasCustomImage = !!product.imageUrl;
   const isVariant = product.isVariant || false;
   const variantColor = product.variantColor || '';
   
+  const widthClass = isSlider ? '' : 'w-full sm:w-[calc(50%-1rem)] md:w-[calc(33.333%-1.33rem)] lg:w-[calc(25%-1.5rem)]';
   return `
-    <div class="featured-product-card flex-shrink-0 w-full sm:w-[calc(50%-1rem)] md:w-[calc(33.333%-1.33rem)] lg:w-[calc(25%-1.5rem)] group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60">
+    <div class="featured-product-card flex-shrink-0 ${widthClass} group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60">
       <div class="overflow-hidden relative aspect-[4/5]">
         <img src="${img}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
@@ -2190,19 +2191,20 @@ const displayFeaturedProducts = () => {
   
   console.log('✅ Öne çıkan ürünler bulundu, HTML oluşturuluyor...');
   
-  // Öne çıkan ürünler grid'ini bul
+  // Slider köklerini bul
   const featuredGrid = document.getElementById('featuredProductsGrid');
-  if (!featuredGrid) {
-    console.error('❌ #featuredProductsGrid bulunamadı');
+  const featuredSlider = document.getElementById('featuredSlider');
+  if (!featuredGrid || !featuredSlider) {
+    console.error('❌ Öne çıkan slider kökleri bulunamadı');
     return;
   }
-  
-  // Grid'i temizle ve ürünleri ekle
-  featuredGrid.innerHTML = featuredProducts.map(item => {
-    if (!item.productId) {
-      console.warn('⚠️ Öne çıkan ürün için productId bulunamadı:', item);
+
+  // Slider içeriğini üret
+  featuredSlider.innerHTML = featuredProducts.map(item => {
+    const product = item.productId;
+    if (!product) {
       return `
-        <div class="featured-product-item">
+        <div class="featured-slide flex-shrink-0">
           <div class="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p class="text-red-600">Ürün bulunamadı</p>
           </div>
@@ -2210,8 +2212,8 @@ const displayFeaturedProducts = () => {
       `;
     }
     return `
-      <div class="featured-product-item">
-        ${createProductCard(item.productId)}
+      <div class="featured-slide">
+        ${createFeaturedProductCard(product, true)}
       </div>
     `;
   }).join('');
@@ -2222,14 +2224,16 @@ const displayFeaturedProducts = () => {
     section.classList.remove('hidden');
   }
   
-  console.log('✅ Öne çıkan ürünler grid\'de gösterildi');
+  // Slider'ı başlat
+  setupFeaturedSlider();
+  console.log('✅ Öne çıkan ürünler slider\'da gösterildi');
 };
 
 // Ölçüm: adım ve maksimum kaydırma mesafesini hesapla
 const measureFeatured = () => {
-  const slider = document.getElementById('featuredSlider');
-  if (!slider) return;
-  const slides = Array.from(slider.querySelectorAll('.featured-slide'));
+  const featuredSliderEl = document.getElementById('featuredSlider');
+  if (!featuredSliderEl) return;
+  const slides = Array.from(featuredSliderEl.querySelectorAll('.featured-slide'));
   if (slides.length === 0) return;
   const first = slides[0];
   const firstStyle = window.getComputedStyle(first);
@@ -2240,7 +2244,7 @@ const measureFeatured = () => {
     const s = window.getComputedStyle(el);
     return sum + el.offsetWidth + (parseFloat(s.marginRight) || 0);
   }, 0);
-  const containerWidth = slider.parentElement ? slider.parentElement.clientWidth : window.innerWidth;
+  const containerWidth = featuredSliderEl.parentElement ? featuredSliderEl.parentElement.clientWidth : window.innerWidth;
   featuredMaxTranslatePx = Math.max(0, totalWidth - containerWidth);
 };
 
@@ -2300,9 +2304,21 @@ const setupFeaturedSlider = () => {
   const prevBtn = document.getElementById('featuredPrevBtn');
   const nextBtn = document.getElementById('featuredNextBtn');
   const dots = document.querySelectorAll('.featured-dot');
+  const featuredSliderEl = document.getElementById('featuredSlider');
   
   // Slider değişkenlerini sıfırla ve ölç
   featuredCurrentSlide = 0;
+
+  // Her slide'ın genişliğini ekrana göre ayarla ve gap ekle
+  if (featuredSliderEl) {
+    const slideWidthPx = getFeaturedSlideWidth();
+    featuredSliderEl.querySelectorAll('.featured-slide').forEach((el, idx, list) => {
+      el.style.width = `${slideWidthPx}px`;
+      el.style.flex = '0 0 auto';
+      el.style.marginRight = idx === list.length - 1 ? '0px' : (window.innerWidth < 640 ? '16px' : '24px');
+    });
+  }
+
   measureFeatured();
   // Toplam adım sayısını öğe sayısına göre belirle (daha güvenilir)
   featuredTotalSlides = Math.max(0, (featuredProducts?.length || 0) - getFeaturedProductsPerView());
@@ -2350,18 +2366,17 @@ const setupFeaturedSlider = () => {
   // Touch/swipe desteği ekle
   let startX = 0;
   let currentX = 0;
-  const slider = document.getElementById('featuredSlider');
   
-  if (slider) {
-    slider.addEventListener('touchstart', (e) => {
+  if (featuredSliderEl) {
+    featuredSliderEl.addEventListener('touchstart', (e) => {
       startX = e.touches[0].clientX;
     });
     
-    slider.addEventListener('touchmove', (e) => {
+    featuredSliderEl.addEventListener('touchmove', (e) => {
       currentX = e.touches[0].clientX;
     });
     
-    slider.addEventListener('touchend', () => {
+    featuredSliderEl.addEventListener('touchend', () => {
       const diff = startX - currentX;
       const threshold = 50;
       
