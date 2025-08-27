@@ -754,40 +754,7 @@
           <!-- Settings -->
           <section id="tab-settings" class="hidden">
             <div class="grid lg:grid-cols-2 gap-6">
-              <!-- Mağaza Bilgileri -->
-              <div class="bg-white rounded-2xl shadow p-6">
-                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-[#CBA135]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
-                  </svg>
-                  Mağaza Bilgileri
-                </h3>
-                <form id="storeSettingsForm" class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mağaza Adı</label>
-                    <input type="text" id="storeName" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" value="Satın Almasız" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mağaza Açıklaması</label>
-                    <textarea id="storeDescription" rows="3" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="Mağazanızı tanıtan kısa açıklama..."></textarea>
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">İletişim Email</label>
-                    <input type="email" id="storeEmail" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="info@magaza.com" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
-                    <input type="tel" id="storePhone" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="0532 123 45 67" />
-                  </div>
-                  <button type="submit" class="w-full bg-[#CBA135] text-white px-4 py-2 rounded-xl hover:bg-[#a87c00] transition">
-                    Bilgileri Kaydet
-                  </button>
-                </form>
-              </div>
-
-
-
-
+              
               <!-- Güvenlik Ayarları -->
               <div class="bg-white rounded-2xl shadow p-6">
                 <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -844,42 +811,7 @@
                 </div>
               </div>
 
-              <!-- Sistem Bilgileri -->
-              <div class="bg-white rounded-2xl shadow p-6">
-                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-[#CBA135]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-                  </svg>
-                  Sistem Bilgileri
-                </h3>
-                <div class="space-y-3">
-                  <div class="flex justify-between py-2 border-b border-slate-100">
-                    <span class="text-sm text-slate-600">Versiyon</span>
-                    <span class="text-sm font-medium">1.0.0</span>
-                  </div>
-                  <div class="flex justify-between py-2 border-b border-slate-100">
-                    <span class="text-sm text-slate-600">Toplam Ürün</span>
-                    <span class="text-sm font-medium" id="totalProducts">-</span>
-                  </div>
-                  <div class="flex justify-between py-2 border-b border-slate-100">
-                    <span class="text-sm text-slate-600">Toplam Kategori</span>
-                    <span class="text-sm font-medium" id="totalCategories">-</span>
-                  </div>
-                  <div class="flex justify-between py-2 border-b border-slate-100">
-                    <span class="text-sm text-slate-600">Depolama Alanı</span>
-                    <span class="text-sm font-medium">~50MB</span>
-                  </div>
-                  
-                  <div class="mt-6 pt-4 border-t border-slate-200">
-                    <button type="button" id="clearCacheBtn" class="w-full border border-slate-300 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 transition mb-2">
-                      Önbelleği Temizle
-                    </button>
-                    <button type="button" id="exportDataBtn" class="w-full border border-green-300 text-green-700 px-4 py-2 rounded-xl hover:bg-green-50 transition">
-                      Verileri Dışa Aktar
-                    </button>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </section>
         </main>

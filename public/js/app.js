@@ -1259,7 +1259,7 @@ const renderPanelProducts = (products, query) => {
 
 // Panel için özel ürün kartı oluştur
 const createPanelProductCard = (product) => {
-  const img = product.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  const img = validateImageUrl(product.imageUrl, product.base64ImageUrl) || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
   
   return `
     <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 hover:border-accent-200 cursor-pointer panel-product-card" onclick="handleProductClick('${product._id}', '${product.name}')">
@@ -2117,8 +2117,8 @@ const getFeaturedSlideWidth = () => {
 
 // Öne çıkan ürünler için özel kart oluştur
 const createFeaturedProductCard = (product, isSlider = true) => {
-  const img = product.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
-  const hasCustomImage = !!product.imageUrl;
+  const img = validateImageUrl(product.imageUrl, product.base64ImageUrl) || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  const hasCustomImage = !!img;
   const isVariant = product.isVariant || false;
   const variantColor = product.variantColor || '';
   
