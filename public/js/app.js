@@ -41,6 +41,10 @@ const validateImageUrl = (imageUrl, base64ImageUrl = null) => {
   if (base64ImageUrl && base64ImageUrl.startsWith('data:image/')) {
     return base64ImageUrl;
   }
+  // Hatalı önek düzeltme: /uploads/http... ise /uploads/ önekini kaldır
+  if (typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/http')) {
+    imageUrl = imageUrl.replace(/^\/uploads\//, '');
+  }
   
   // İkinci öncelik: Cloudinary URL'i
   if (imageUrl && imageUrl.includes('cloudinary.com')) {
@@ -324,7 +328,7 @@ const createCategoryCard = (category) => {
         <img 
           src="${img}" 
           alt="${category.name}" 
-          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-10"
+          class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 relative z-10"
           onload="this.previousElementSibling.style.display='none'"
           onerror="handleImageError(this, '${img}')"
           loading="lazy"
@@ -500,7 +504,7 @@ const createProductCard = (product, isPanel = false) => {
         <img 
           src="${img}" 
           alt="${product.name}" 
-          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-20"
+          class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 relative z-20"
           onload="this.previousElementSibling.style.display='none'"
           onerror="handleImageError(this, '${img}')"
           loading="lazy"
@@ -1261,7 +1265,7 @@ const createPanelProductCard = (product) => {
     <div class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 hover:border-accent-200 cursor-pointer panel-product-card" onclick="handleProductClick('${product._id}', '${product.name}')">
       <!-- Product Image -->
       <div class="relative overflow-hidden">
-        <img src="${img}" alt="${product.name}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"/>
+        <img src="${img}" alt="${product.name}" class="w-full h-32 object-contain group-hover:scale-105 transition-transform duration-300"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         
         <!-- Price Badge -->
@@ -2122,7 +2126,7 @@ const createFeaturedProductCard = (product, isSlider = true) => {
   return `
     <div class="featured-product-card flex-shrink-0 ${widthClass} group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 text-left bg-white/95 backdrop-blur-sm border border-white/40 hover:border-accent-200/60">
       <div class="overflow-hidden relative aspect-[4/5]">
-        <img src="${img}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
+        <img src="${img}" alt="${product.name}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         
         <!-- Featured Badge -->

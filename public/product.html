@@ -284,7 +284,7 @@
                 id="productImage" 
                 src="" 
                 alt="Ürün Görseli" 
-                class="w-full h-96 lg:h-[500px] object-cover product-image cursor-pointer"
+                class="w-full h-auto max-h-[80vh] object-contain product-image cursor-pointer"
                 onclick="openImageModal(this.src)"
               >
               <div class="absolute top-4 right-4">
@@ -693,113 +693,6 @@
 
 
 
-                  <!-- Footer -->
-                  <footer class="bg-gradient-to-br from-champagne-50 to-pastel-pink/30 border-t border-champagne-200/50">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        
-                        <!-- İletişim Bilgileri -->
-                        <div class="space-y-4">
-                          <h3 class="text-lg font-semibold text-gray-800 mb-4">İletişim</h3>
-                          <div class="space-y-3">
-                            <div class="flex items-start gap-3">
-                              <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                </svg>
-                              </div>
-                              <div>
-                                <p class="text-sm font-medium text-gray-700">Telefon</p>
-                                <p class="text-sm text-gray-600">+90 555 123 45 67</p>
-                              </div>
-                            </div>
-                            
-                            <div class="flex items-start gap-3">
-                              <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                              </div>
-                              <div>
-                                <p class="text-sm font-medium text-gray-700">E-posta</p>
-                                <p class="text-sm text-gray-600">info@butikmagaza.com</p>
-                              </div>
-                            </div>
-                            
-                            <div class="flex items-start gap-3">
-                              <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3 h-3 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                              </div>
-                              <div>
-                                <p class="text-sm font-medium text-gray-700">Adres</p>
-                                <p class="text-sm text-gray-600">Atatürk Caddesi No:123<br>Merkez / İstanbul</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <!-- Hızlı Linkler -->
-                        <div class="space-y-4">
-                          <h3 class="text-lg font-semibold text-gray-800 mb-4">Hızlı Linkler</h3>
-                          <div class="space-y-3">
-                            <a href="/" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Ana Sayfa</a>
-                            <a href="/category" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Tüm Kategoriler</a>
-                            <a href="/category?new=true" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Yeni Ürünler</a>
-                            <a href="/category?discount=true" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">İndirimler</a>
-                          </div>
-                        </div>
-                        
-                        <!-- Müşteri Hizmetleri -->
-                        <div class="space-y-4">
-                          <h3 class="text-lg font-semibold text-gray-800 mb-4">Müşteri Hizmetleri</h3>
-                          <div class="space-y-3">
-                            <a href="/faq" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Sıkça Sorulan Sorular</a>
-                            <a href="/faq#shipping" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Kargo ve Teslimat</a>
-                            <a href="/faq#returns" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">İade ve Değişim</a>
-                            <a href="/faq#privacy" class="block text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">Gizlilik Politikası</a>
-                          </div>
-                        </div>
-                        
-                        <!-- Sosyal Medya ve İletişim -->
-                        <div class="space-y-4">
-                          <h3 class="text-lg font-semibold text-gray-800 mb-4">Bizi Takip Edin</h3>
-                          <div class="space-y-3">
-                            <a href="https://instagram.com/htm.moda" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 text-sm text-gray-600 hover:text-gold-600 transition-colors duration-200">
-                              <div class="w-5 h-5 bg-gold-100 rounded-full flex items-center justify-center">
-                                <svg class="w-3 h-3 text-gold-600" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.746-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z"/>
-                                </svg>
-                              </div>
-                              <span>Instagram</span>
-                            </a>
-                          </div>
-                          
-                          <!-- WhatsApp İletişim -->
-                          <div class="pt-4">
-                            <a href="https://wa.me/905065668854" target="_blank" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
-                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                              </svg>
-                              WhatsApp ile İletişim
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <!-- Alt Bilgi -->
-                      <div class="border-t border-champagne-200/50 mt-8 pt-8 text-center">
-                        <p class="text-sm text-gray-600">
-                          © 2024 Butik Mağaza. Tüm hakları saklıdır. | 
-                          <a href="/faq#privacy" class="text-gold-600 hover:text-gold-700 transition-colors duration-200">Gizlilik Politikası</a> | 
-                          <a href="/faq#terms" class="text-gold-600 hover:text-gold-700 transition-colors duration-200">Kullanım Şartları</a>
-                        </p>
-                      </div>
-                    </div>
-                  </footer>
-
     <!-- WhatsApp Float Button -->
     <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
       <a 
@@ -840,7 +733,12 @@
       function getImageSrc(img) {
         if (!img) return '';
         try {
-          return (typeof img === 'object' && img.url) ? img.url : String(img);
+          const raw = (typeof img === 'object' && img.url) ? img.url : String(img);
+          // Güvenli düzeltme: '/uploads/https...' gibi yanlış önekleri temizle
+          if (raw.startsWith('/uploads/http')) {
+            return raw.replace(/^\/uploads\//, '');
+          }
+          return raw;
         } catch (_) {
           return '';
         }
@@ -1127,7 +1025,7 @@
           if (imageSection) {
             const newElement = document.createElement('img');
             newElement.id = 'productImage';
-            newElement.className = 'w-full h-96 lg:h-[500px] object-cover product-image cursor-pointer';
+            newElement.className = 'w-full h-auto max-h-[80vh] object-contain product-image cursor-pointer';
             newElement.alt = 'Ürün Görseli';
             newElement.onclick = function() { openImageModal(this.src); };
             
@@ -1540,7 +1438,7 @@
               <div class="aspect-[4/3] overflow-hidden">
                 <img src="${productImage || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" 
                      alt="${productName}" 
-                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                     class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div class="p-4">
                 <h3 class="font-semibold text-gray-800 mb-2 group-hover:text-gold-600 transition-colors duration-300 line-clamp-2">
@@ -1621,7 +1519,7 @@
                  onclick="goToImage(${index})">
               <img src="${thumb.src}" 
                    alt="${thumb.alt}" 
-                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                   class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300" />
               <div class="absolute inset-0 bg-gold-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               ${thumb.isMain ? '<div class="absolute top-2 left-2 bg-gold-400 text-white text-xs px-2 py-1 rounded-full">Ana</div>' : ''}
             </div>
@@ -2239,7 +2137,7 @@
                onclick="goToImage(${index})">
             <img src="${getImageSrc(img)}" 
                  alt="${variant.color} renk görseli ${index + 1}" 
-                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                 class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300" />
             <div class="absolute inset-0 bg-gold-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             ${index === 0 ? '<div class="absolute top-2 left-2 bg-gold-400 text-white text-xs px-2 py-1 rounded-full">Ana</div>' : ''}
           </div>
@@ -2541,7 +2439,7 @@
             ${variant.images && variant.images.length > 0 ? 
               variant.images.slice(0, 3).map(img => `
                 <div class="aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-gold-400 transition-all duration-300">
-                  <img src="${img}" alt="${variant.color} görseli" class="w-full h-full object-cover" />
+                  <img src="${img}" alt="${variant.color} görseli" class="w-full h-full object-contain" />
                 </div>
               `).join('') : 
               '<div class="col-span-3 text-center text-slate-400 text-sm py-4">Görsel yok</div>'

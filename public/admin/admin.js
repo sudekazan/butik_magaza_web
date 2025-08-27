@@ -1081,7 +1081,9 @@ const openNewProductModal = (productData) => {
 const productCard = (p) => {
   const div = document.createElement('div');
   div.className = 'border rounded-xl p-3 space-y-2';
-  const img = p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  const img = (typeof p.imageUrl === 'string' && p.imageUrl.startsWith('/uploads/http')) 
+    ? p.imageUrl.replace(/^\/uploads\//, '') 
+    : (p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop');
   div.innerHTML = `
     <img src="${img}" class="w-full h-72 object-cover rounded-lg" alt="${p.name}" />
     <div class="flex items-start justify-between">
@@ -1101,7 +1103,9 @@ const productCard = (p) => {
 
 const renderProductRow = (p) => {
   const tr = document.createElement('tr');
-  const img = p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop';
+  const img = (typeof p.imageUrl === 'string' && p.imageUrl.startsWith('/uploads/http')) 
+    ? p.imageUrl.replace(/^\/uploads\//, '') 
+    : (p.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop');
   const hasCustomImage = !!p.imageUrl;
   const isVariant = p.isVariant || false;
   const variantColor = p.variantColor || '';
@@ -1642,13 +1646,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (variantsContainer) {
         variantsContainer.innerHTML = '';
         console.log('Variants container temizlendi');
-        // Varsayılan bir varyant ekle
-        if (typeof addVariant === 'function') {
-          addVariant();
-          console.log('Varsayılan varyant eklendi');
-        } else {
-          console.warn('addVariant fonksiyonu henüz tanımlanmamış');
-        }
+        // Otomatik varyant ekleme kaldırıldı; sadece butona basıldığında eklenecek
       }
       
       // Çoklu görselleri temizle
@@ -3550,7 +3548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <!-- Ürün Görseli -->
           <div class="flex-shrink-0">
             <div class="w-24 h-24 rounded-lg overflow-hidden bg-slate-100">
-              <img src="${product.images?.[0]?.url || product.imageUrl || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" 
+              <img src="${(product.images?.[0]?.url && product.images[0].url.startsWith('/uploads/http')) ? product.images[0].url.replace(/^\/uploads\//,'') : (product.images?.[0]?.url || (typeof product.imageUrl === 'string' && product.imageUrl.startsWith('/uploads/http') ? product.imageUrl.replace(/^\/uploads\//,'') : product.imageUrl)) || 'https://images.unsplash.com/photo-1520975922284-6c62f25a1c9b?q=80&w=800&auto=format&fit=crop'}" 
                    alt="${product.name}" 
                    class="w-full h-full object-cover" />
             </div>

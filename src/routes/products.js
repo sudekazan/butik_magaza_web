@@ -429,9 +429,10 @@ router.post('/', verifyToken, upload.fields([
           description: created.description,
           price: created.price,
           categoryId: created.categoryId,
-          imageUrl: variant.images[0] ? (variant.images[0].startsWith('/uploads/') ? variant.images[0] : `/uploads/${variant.images[0]}`) : created.imageUrl,
-          images: variant.images && variant.images.length > 0 ? variant.images.map(imgUrl => ({
-            url: imgUrl.startsWith('/uploads/') ? imgUrl : `/uploads/${imgUrl}`,
+          // URL'leri olduğu gibi kullan: Cloudinary (http/https) ya da /uploads/ ise dokunma
+          imageUrl: variant.images[0] ? String(variant.images[0]) : created.imageUrl,
+          images: variant.images && variant.images.length > 0 ? variant.images.map((imgUrl) => ({
+            url: String(imgUrl),
             alt: `${variant.color} variant image`,
             isMain: false
           })) : [],
@@ -802,26 +803,9 @@ router.delete('/bulk', verifyToken, async (req, res) => {
       console.log('❌ Hiç geçerli ID bulunamadı');
       return res.status(400).json({ message: 'Geçerli ürün ID bulunamadı' });
     }
-    // Silme kapsamını genişlet: ana ürünlerin varyantlarını da ekle
+    // Bağımsız silme: yalnızca seçilen ID'leri sil
     const initialProducts = await Product.find({ _id: { $in: validIds } });
     const deleteSet = new Set(validIds);
-    const variantColorsByParent = new Map(); // parentId -> Set(colors)
-
-    for (const prod of initialProducts) {
-      if (!prod) continue;
-      if (prod.isVariant === true && prod.parentProductId) {
-        const parentId = String(prod.parentProductId);
-        if (!deleteSet.has(parentId)) {
-          const colorSet = variantColorsByParent.get(parentId) || new Set();
-          if (prod.variantColor) colorSet.add(String(prod.variantColor));
-          variantColorsByParent.set(parentId, colorSet);
-        }
-      }
-      if (prod.isVariant === false) {
-        const children = await Product.find({ parentProductId: prod._id, isVariant: true }, { _id: 1 });
-        for (const child of children) deleteSet.add(String(child._id));
-      }
-    }
 
     const allIdsToDelete = Array.from(deleteSet);
     // Silmeden önce ürünleri al (görselleri silmek için) — genişletilmiş liste
@@ -869,21 +853,7 @@ router.delete('/bulk', verifyToken, async (req, res) => {
     
     const result = await Product.deleteMany({ _id: { $in: allIdsToDelete } });
 
-    // Ebeveyn ürünlerin variants listesinden silinen varyant renklerini kaldır
-    for (const [parentId, colorSet] of variantColorsByParent.entries()) {
-      try {
-        if (deleteSet.has(parentId)) continue; // ebeveyn de siliniyorsa atla
-        const parent = await Product.findById(parentId);
-        if (!parent) continue;
-        if (Array.isArray(parent.variants) && parent.variants.length > 0) {
-          const colors = new Set(Array.from(colorSet));
-          parent.variants = parent.variants.filter((v) => v && v.color ? !colors.has(String(v.color)) : true);
-          await parent.save();
-        }
-      } catch (e) {
-        console.error('Ebeveyn varyant listesi güncellenirken hata:', e);
-      }
-    }
+    // Bağımsız silme: ebeveyn-varyant ilişkisini değiştirmeyin
 
     res.json({ 
       message: `${result.deletedCount} ürün (varyantlar dahil) başarıyla silindi`,
@@ -980,47 +950,9 @@ router.delete('/:id', verifyToken, async (req, res) => {
         }
       });
     }
-    // Eğer ana ürün silindiyse: tüm varyant çocukları da sil
-    if (prod.isVariant === false) {
-      try {
-        const children = await Product.find({ parentProductId: prod._id, isVariant: true });
-        for (const child of children) {
-          if (child.images && child.images.length > 0) {
-            child.images.forEach((img) => {
-              if (img.url && img.url.startsWith('/uploads/')) {
-                const safeRelative = img.url.replace(/^\//, '');
-                const oldPath = path.join(process.cwd(), safeRelative);
-                fs.unlink(oldPath, (err) => {
-                  if (err) console.error('Varyant resmi silinirken hata:', err);
-                });
-              }
-            });
-          } else if (child.imageUrl && child.imageUrl.startsWith('/uploads/')) {
-            const safeRelative = child.imageUrl.replace(/^\//, '');
-            const oldPath = path.join(process.cwd(), safeRelative);
-            fs.unlink(oldPath, (err) => {
-              if (err) console.error('Varyant ana resmi silinirken hata:', err);
-            });
-          }
-          await Product.deleteOne({ _id: child._id });
-        }
-      } catch (e) {
-        console.error('Ana ürün varyantları silinirken hata:', e);
-      }
-    }
+    // Bağımsız silme: ana ürünü silerken varyantları dokunma
 
-    // Eğer varyant ürün silindiyse: ebeveyn ürünün variants listesinden bu rengi kaldır
-    if (prod.isVariant === true && prod.parentProductId) {
-      try {
-        const parent = await Product.findById(prod.parentProductId);
-        if (parent && Array.isArray(parent.variants) && parent.variants.length > 0) {
-          parent.variants = parent.variants.filter((v) => !v || String(v.color) !== String(prod.variantColor) ? true : false);
-          await parent.save();
-        }
-      } catch (e) {
-        console.error('Ebeveyn varyant listesi güncellenirken hata:', e);
-      }
-    }
+    // Bağımsız silme: varyant silinirken ebeveyn ürünün variants listesine dokunma
 
     res.json({ success: true });
   } catch (err) {
