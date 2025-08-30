@@ -19,20 +19,64 @@ const DEFAULT_ADMIN_HASH = '$2b$12$HmFMQ/3FgwWGbelytkSj7OU6AI7taFd81ZPqMRU2dWSdW
 let currentAdminPasswordHash = process.env.ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_HASH;
 
 // Şifre değişikliklerini kalıcı hale getirmek için dosya sistemi kullan
-const PASSWORD_FILE = path.join(process.cwd(), 'admin-password.txt');
+// Daha güvenilir yol belirleme
+const getPasswordFilePath = () => {
+  // Önce process.cwd() ile dene
+  const cwdPath = path.join(process.cwd(), 'admin-password.txt');
+  
+  // Eğer yazma izni yoksa, geçici dizin kullan
+  try {
+    // Test yazma işlemi
+    fs.accessSync(process.cwd(), fs.constants.W_OK);
+    return cwdPath;
+  } catch (error) {
+    console.warn('⚠️ Ana dizine yazma izni yok, geçici dizin kullanılıyor');
+    // Geçici dizin kullan
+    const tempPath = path.join(process.env.TEMP || process.env.TMP || '/tmp', 'admin-password.txt');
+    return tempPath;
+  }
+};
+
+const PASSWORD_FILE = getPasswordFilePath();
 
 // Sunucu başlatıldığında kalıcı dosyadan şifreyi yükle
-try {
-  if (fs.existsSync(PASSWORD_FILE)) {
-    const savedPasswordHash = fs.readFileSync(PASSWORD_FILE, 'utf8').trim();
-    if (savedPasswordHash && savedPasswordHash.length > 0) {
-      currentAdminPasswordHash = savedPasswordHash;
-      console.log('✅ Kalıcı şifre dosyasından yüklendi');
+const loadPasswordFromFile = async () => {
+  try {
+    if (fs.existsSync(PASSWORD_FILE)) {
+      const savedPasswordHash = fs.readFileSync(PASSWORD_FILE, 'utf8').trim();
+      if (savedPasswordHash && savedPasswordHash.length > 0) {
+        currentAdminPasswordHash = savedPasswordHash;
+        console.log('✅ Kalıcı şifre dosyasından yüklendi:', PASSWORD_FILE);
+        return true;
+      }
     }
+  } catch (error) {
+    console.warn('⚠️ Kalıcı şifre dosyası yüklenemedi, varsayılan şifre kullanılıyor:', error.message);
   }
-} catch (error) {
-  console.warn('⚠️ Kalıcı şifre dosyası yüklenemedi, varsayılan şifre kullanılıyor:', error.message);
-}
+  return false;
+};
+
+// Şifreyi dosyaya kaydetme işlemi
+const savePasswordToFile = async (passwordHash) => {
+  try {
+    // Dosya dizinini oluştur (eğer yoksa)
+    const dir = path.dirname(PASSWORD_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    // Şifreyi dosyaya yaz
+    fs.writeFileSync(PASSWORD_FILE, passwordHash, 'utf8');
+    console.log('✅ Şifre kalıcı dosyaya kaydedildi:', PASSWORD_FILE);
+    return true;
+  } catch (error) {
+    console.error('❌ Şifre dosyaya kaydedilemedi:', error.message);
+    return false;
+  }
+};
+
+// Sunucu başlatıldığında şifreyi yükle
+loadPasswordFromFile();
 
 router.post('/login', async (req, res) => {
   try {
@@ -92,25 +136,51 @@ router.post('/change-password', async (req, res) => {
     currentAdminPasswordHash = newPasswordHash;
     
     // Şifreyi kalıcı dosyaya kaydet
-    try {
-      fs.writeFileSync(PASSWORD_FILE, newPasswordHash, 'utf8');
-      console.log('✅ Şifre kalıcı dosyaya kaydedildi:', PASSWORD_FILE);
-    } catch (fileError) {
-      console.warn('⚠️ Şifre dosyaya kaydedilemedi, sadece memory\'de güncellendi:', fileError.message);
+    const fileSaved = await savePasswordToFile(newPasswordHash);
+    
+    if (fileSaved) {
+      console.log('✅ Admin şifresi başarıyla değiştirildi!');
+      console.log('🔑 Yeni hash:', newPasswordHash);
+      console.log('💡 Şifre kalıcı dosyaya kaydedildi ve sunucu yeniden başlatıldığında korunacak');
+      
+      return res.json({ 
+        message: 'Şifre başarıyla değiştirildi ve kalıcı olarak kaydedildi!',
+        success: true,
+        note: 'Şifre değişikliği hemen aktif oldu ve kalıcı olarak kaydedildi. Sunucu yeniden başlatıldığında da korunacak.',
+        filePath: PASSWORD_FILE
+      });
+    } else {
+      console.warn('⚠️ Şifre dosyaya kaydedilemedi, sadece memory\'de güncellendi');
+      
+      return res.json({ 
+        message: 'Şifre değiştirildi ancak kalıcı kayıt başarısız!',
+        success: true,
+        warning: 'Şifre değişikliği aktif ancak sunucu yeniden başlatıldığında kaybolabilir. Lütfen sistem yöneticisi ile iletişime geçin.',
+        filePath: PASSWORD_FILE
+      });
     }
-    
-    console.log('✅ Admin şifresi başarıyla değiştirildi!');
-    console.log('🔑 Yeni hash:', newPasswordHash);
-    console.log('💡 Şifre kalıcı dosyaya kaydedildi ve sunucu yeniden başlatıldığında korunacak');
-    
-    return res.json({ 
-      message: 'Şifre başarıyla değiştirildi ve kalıcı olarak kaydedildi!',
-      success: true,
-      note: 'Şifre değişikliği hemen aktif oldu ve kalıcı olarak kaydedildi. Sunucu yeniden başlatıldığında da korunacak.'
-    });
     
   } catch (error) {
     console.error('Şifre değiştirme hatası:', error);
+    return res.status(500).json({ message: 'Sunucu hatası' });
+  }
+});
+
+// Şifre durumu kontrol endpoint'i
+router.get('/password-status', async (req, res) => {
+  try {
+    const fileExists = fs.existsSync(PASSWORD_FILE);
+    const fileWritable = fileExists ? true : await savePasswordToFile('test');
+    
+    return res.json({
+      memoryHash: currentAdminPasswordHash ? 'Mevcut' : 'Yok',
+      filePath: PASSWORD_FILE,
+      fileExists,
+      fileWritable,
+      defaultHash: currentAdminPasswordHash === DEFAULT_ADMIN_HASH
+    });
+  } catch (error) {
+    console.error('Şifre durumu kontrol hatası:', error);
     return res.status(500).json({ message: 'Sunucu hatası' });
   }
 });

@@ -757,12 +757,17 @@
               
               <!-- Güvenlik Ayarları -->
               <div class="bg-white rounded-2xl shadow p-6">
-                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-[#CBA135]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
-                  </svg>
-                  Güvenlik Ayarları
-                </h3>
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-[#CBA135]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+                    </svg>
+                    Güvenlik Ayarları
+                  </h3>
+                  <button id="checkPasswordStatusBtn" class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+                    Şifre Durumunu Kontrol Et
+                  </button>
+                </div>
                 <form id="changePasswordForm" class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Mevcut Şifre</label>
@@ -807,6 +812,16 @@
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.334 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                     <span id="passwordErrorText">Şifre değiştirme başarısız!</span>
+                  </div>
+                </div>
+                
+                <!-- Şifre Durumu Mesajı -->
+                <div id="passwordStatusMessage" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm hidden">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="passwordStatusText">Şifre durumu kontrol ediliyor...</span>
                   </div>
                 </div>
               </div>

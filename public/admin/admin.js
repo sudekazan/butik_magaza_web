@@ -269,7 +269,7 @@ const setMainImage = async (imageId) => {
   renderProductImages();
   updateImageControls();
   
-  // Düzenleme modundaysa anında backend’e işle
+  // Düzenleme modundaysa anında backend'e işle
   try {
     if (!editingProductId) return; // yeni ekleme modunda bekle
     const target = productImages.find(i => i.id === imageId);
@@ -297,7 +297,7 @@ const removeProductImage = async (imageId) => {
   const wasMain = !!target.isMain;
   const url = target.url || '';
 
-  // UI’den kaldır
+  // UI'den kaldır
   productImages.splice(index, 1);
   if (productImages.length > 0 && !productImages.some(img => img.isMain)) {
     productImages[0].isMain = true;
@@ -305,7 +305,7 @@ const removeProductImage = async (imageId) => {
   renderProductImages();
   updateImageControls();
 
-  // Düzenleme modunda mevcut URL ise backend’den sil
+  // Düzenleme modunda mevcut URL ise backend'den sil
   try {
     if (editingProductId && url) {
       const res = await authFetch(`/api/products/${editingProductId}/images`, {
@@ -2895,7 +2895,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const checks = {
         length: password.length >= 8,
         lowercase: /[a-z]/.test(password),
-        uppercase: /[A-Z]/.test(password),
+        uppercase: /[a-z]/.test(password),
         numbers: /\d/.test(password),
         special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
       };
@@ -2992,7 +2992,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await response.json();
 
         if (response.ok) {
-          showPasswordSuccess('Şifre başarıyla değiştirildi ve kalıcı olarak kaydedildi! Hemen yeni şifrenizle giriş yapabilirsiniz.');
+          if (data.warning) {
+            // Uyarı mesajı göster
+            showPasswordWarning(data.message, data.warning, data.filePath);
+          } else {
+            // Başarı mesajı göster
+            showPasswordSuccess(data.message);
+          }
+          
           form.reset();
           strengthIndicator.classList.add('hidden');
           
@@ -3000,6 +3007,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.log('✅ Şifre değişikliği başarılı!');
           if (data.note) {
             console.log('💡 Not:', data.note);
+          }
+          if (data.warning) {
+            console.warn('⚠️ Uyarı:', data.warning);
+          }
+          if (data.filePath) {
+            console.log('📁 Dosya yolu:', data.filePath);
           }
           
         } else {
@@ -3030,6 +3043,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
 
+    const showPasswordWarning = (message, warning, filePath) => {
+      hidePasswordMessages();
+      if (successMessage) {
+        // Uyarı mesajını göster
+        const messageSpan = successMessage.querySelector('span');
+        if (messageSpan) {
+          messageSpan.innerHTML = `
+            <div class="space-y-2">
+              <div class="text-green-600">${message}</div>
+              <div class="text-orange-600 text-sm">⚠️ ${warning}</div>
+              ${filePath ? `<div class="text-xs text-gray-500">Dosya yolu: ${filePath}</div>` : ''}
+            </div>
+          `;
+        }
+        successMessage.classList.remove('hidden');
+        setTimeout(() => {
+          successMessage.classList.add('hidden');
+        }, 10000); // Uyarı için daha uzun göster
+      }
+    };
+
     const showPasswordError = (message) => {
       hidePasswordMessages();
       if (errorText) errorText.textContent = message;
@@ -3043,6 +3077,97 @@ document.addEventListener('DOMContentLoaded', async () => {
       successMessage?.classList.add('hidden');
       errorMessage?.classList.add('hidden');
     };
+    
+    // Şifre durumu kontrol fonksiyonu
+    const checkPasswordStatus = async () => {
+      try {
+        const statusBtn = document.getElementById('checkPasswordStatusBtn');
+        const originalText = statusBtn.textContent;
+        statusBtn.disabled = true;
+        statusBtn.textContent = 'Kontrol ediliyor...';
+        
+        const response = await fetch('/api/auth/password-status', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          let statusText = '';
+          let statusClass = '';
+          
+          if (data.defaultHash) {
+            statusText = '⚠️ Varsayılan şifre kullanılıyor. Şifre değiştirilmemiş.';
+            statusClass = 'bg-yellow-50 border-yellow-200 text-yellow-700';
+          } else if (data.fileExists && data.fileWritable) {
+            statusText = '✅ Şifre kalıcı olarak kaydedilmiş ve korunuyor.';
+            statusClass = 'bg-green-50 border-green-200 text-green-700';
+          } else if (data.fileExists && !data.fileWritable) {
+            statusText = '⚠️ Şifre dosyası mevcut ancak yazma izni yok.';
+            statusClass = 'bg-orange-50 border-orange-200 text-orange-700';
+          } else {
+            statusText = '❌ Şifre dosyası bulunamadı veya yazılamıyor.';
+            statusClass = 'bg-red-50 border-red-200 text-red-700';
+          }
+          
+          // Dosya yolu bilgisi ekle
+          if (data.filePath) {
+            statusText += `\n📁 Dosya yolu: ${data.filePath}`;
+          }
+          
+          // Mesajı göster
+          const statusMessage = document.getElementById('passwordStatusMessage');
+          const statusTextSpan = document.getElementById('passwordStatusText');
+          
+          if (statusMessage && statusTextSpan) {
+            statusMessage.className = `mt-4 p-3 border rounded-xl text-sm ${statusClass}`;
+            statusTextSpan.textContent = statusText;
+            statusMessage.classList.remove('hidden');
+            
+            // 10 saniye sonra gizle
+            setTimeout(() => {
+              statusMessage.classList.add('hidden');
+            }, 10000);
+          }
+          
+          console.log('🔍 Şifre durumu:', data);
+          
+        } else {
+          throw new Error('Şifre durumu kontrol edilemedi');
+        }
+        
+      } catch (error) {
+        console.error('Şifre durumu kontrol hatası:', error);
+        
+        const statusMessage = document.getElementById('passwordStatusMessage');
+        const statusTextSpan = document.getElementById('passwordStatusText');
+        
+        if (statusMessage && statusTextSpan) {
+          statusMessage.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm';
+          statusTextSpan.textContent = '❌ Şifre durumu kontrol edilemedi. Bağlantı hatası.';
+          statusMessage.classList.remove('hidden');
+          
+          setTimeout(() => {
+            statusMessage.classList.add('hidden');
+          }, 5000);
+        }
+        
+      } finally {
+        const statusBtn = document.getElementById('checkPasswordStatusBtn');
+        if (statusBtn) {
+          statusBtn.disabled = false;
+          statusBtn.textContent = 'Şifre Durumunu Kontrol Et';
+        }
+      }
+    };
+    
+    // Şifre durumu kontrol butonuna event listener ekle
+    const statusBtn = document.getElementById('checkPasswordStatusBtn');
+    if (statusBtn) {
+      statusBtn.addEventListener('click', checkPasswordStatus);
+    }
   };
 
   // DOM yüklendiğinde şifre değiştirme sistemini başlat
