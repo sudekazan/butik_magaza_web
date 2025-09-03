@@ -771,39 +771,15 @@
                 <form id="changePasswordForm" class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Mevcut Şifre</label>
-                    <div class="relative">
-                      <input type="password" id="currentPassword" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="Mevcut şifrenizi giriniz" />
-                      <button type="button" id="toggleCurrentPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
-                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                      </button>
-                    </div>
+                    <input type="password" id="currentPassword" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="Mevcut şifrenizi giriniz" />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre</label>
-                    <div class="relative">
-                      <input type="password" id="newPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="En az 6 karakter" />
-                      <button type="button" id="toggleNewPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
-                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                      </button>
-                    </div>
+                    <input type="password" id="newPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="En az 6 karakter" />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre (Tekrar)</label>
-                    <div class="relative">
-                      <input type="password" id="confirmPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="Yeni şifreyi tekrar giriniz" />
-                      <button type="button" id="toggleConfirmPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
-                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                      </button>
-                    </div>
+                    <input type="password" id="confirmPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="Yeni şifreyi tekrar giriniz" />
                   </div>
                   
                   <!-- Şifre Gücü İndikatörü -->

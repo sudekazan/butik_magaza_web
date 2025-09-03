@@ -2880,10 +2880,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('changePasswordForm');
     const newPasswordInput = document.getElementById('newPassword');
     const confirmPasswordInput = document.getElementById('confirmPassword');
-    const currentPasswordInput = document.getElementById('currentPassword');
-    const toggleCurrentPasswordBtn = document.getElementById('toggleCurrentPassword');
-    const toggleNewPasswordBtn = document.getElementById('toggleNewPassword');
-    const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
     const strengthIndicator = document.getElementById('passwordStrength');
     const strengthBar = document.getElementById('strengthBar');
     const strengthText = document.getElementById('strengthText');
@@ -2893,45 +2889,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!form) return;
 
-    // Şifre gösterme/gizleme işlevleri
-    const setupPasswordToggle = (input, button) => {
-      if (!input || !button) return;
-
-      const icon = button.querySelector('svg');
-
-      button.addEventListener('click', () => {
-        const isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-
-        // İkonu değiştir
-        if (isPassword) {
-          // Şifreyi göster - kapalı göz ikonu
-          icon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878l4.242 4.242M12 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-1.563 3.029m-5.858-.908a3 3 0 01-4.243-4.243"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
-          `;
-        } else {
-          // Şifreyi gizle - açık göz ikonu
-          icon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-          `;
-        }
-      });
-    };
-
-    // Toggle butonlarını kur
-    setupPasswordToggle(currentPasswordInput, toggleCurrentPasswordBtn);
-    setupPasswordToggle(newPasswordInput, toggleNewPasswordBtn);
-    setupPasswordToggle(confirmPasswordInput, toggleConfirmPasswordBtn);
-
     // Şifre gücü kontrolü
     const checkPasswordStrength = (password) => {
       let strength = 0;
       const checks = {
         length: password.length >= 8,
         lowercase: /[a-z]/.test(password),
-        uppercase: /[A-Z]/.test(password),
+        uppercase: /[a-z]/.test(password),
         numbers: /\d/.test(password),
         special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
       };
