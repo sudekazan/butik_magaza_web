@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Butik Mağaza - Admin Paneli</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
+              display: ['Playfair Display', 'serif']
+            },
+            colors: {
+              champagne: {
+                50: '#FEFCF7',
+                100: '#FDF8ED',
+                200: '#FBF0D6',
+                300: '#F8E4B8',
+                400: '#F4D494',
+                500: '#F0C270',
+                600: '#E8A94A',
+                700: '#D18F2E',
+                800: '#A87225',
+                900: '#8A5F22'
+              },
+              gold: {
+                50: '#FFFBEB',
+                100: '#FEF3C7',
+                200: '#FDE68A',
+                300: '#FCD34D',
+                400: '#FBBF24',
+                500: '#F59E0B',
+                600: '#D97706',
+                700: '#B45309',
+                800: '#92400E',
+                900: '#78350F'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .glass-effect {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .glass-card {
+        backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, #F59E0B, #D97706, #B45309);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .admin-glow {
+        box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
+      }
+      .floating-element {
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-20px) rotate(1deg); }
+        66% { transform: translateY(-10px) rotate(-1deg); }
+      }
+    </style>
+  </head>
+  <body class="font-sans min-h-screen bg-gradient-to-br from-champagne-50 via-gold-50 to-champagne-100 flex items-center justify-center p-4 relative overflow-hidden">
+    
+    <!-- Floating Background Elements -->
+    <div class="absolute top-10 left-10 w-32 h-32 bg-gold-200 rounded-full opacity-20 floating-element"></div>
+    <div class="absolute bottom-20 right-20 w-24 h-24 bg-champagne-300 rounded-full opacity-30 floating-element" style="animation-delay: -2s;"></div>
+    <div class="absolute top-1/3 right-10 w-16 h-16 bg-gold-300 rounded-full opacity-25 floating-element" style="animation-delay: -4s;"></div>
+    <div class="absolute bottom-1/3 left-20 w-20 h-20 bg-champagne-400 rounded-full opacity-20 floating-element" style="animation-delay: -3s;"></div>
+
+    <!-- Main Login Card -->
+    <div class="w-full max-w-md bg-white/90 glass-card rounded-3xl shadow-2xl admin-glow p-8 relative">
+      
+      <!-- Logo & Title -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-gold-400 to-champagne-500 mb-6 shadow-xl">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-display font-bold gradient-text mb-2">Butik Mağaza</h1>
+        <p class="text-gray-600 font-medium">Admin Paneli Girişi</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Admin Şifresi</label>
+          <div class="relative">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              placeholder="Şifrenizi giriniz"
+              class="w-full rounded-2xl border-2 border-gray-200 focus:border-gold-500 focus:ring-4 focus:ring-gold-200 px-4 py-3 text-gray-800 placeholder-gray-400 transition-all duration-300 bg-white/70 pr-12"
+            />
+            <button
+              type="button"
+              id="togglePassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gold-500 transition-colors duration-200"
+            >
+              <svg class="w-5 h-5 text-gray-400 hover:text-gold-500 transition-colors duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <button 
+          type="submit"
+          class="w-full bg-gradient-to-r from-gold-500 via-gold-600 to-champagne-600 hover:from-gold-600 hover:via-gold-700 hover:to-champagne-700 text-white rounded-2xl py-4 font-semibold text-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-lg"
+        >
+          <span class="flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+            Admin Paneline Giriş
+          </span>
+        </button>
+      </form>
+      
+      <!-- Error Message -->
+      <div id="error" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center hidden">
+        <div class="flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.334 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>Şifre hatalı! Lütfen tekrar deneyin.</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-8 text-center">
+        <p class="text-xs text-gray-500">
+          © 2024 Butik Mağaza - Tüm hakları saklıdır
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('loginForm');
+      const error = document.getElementById('error');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const passwordInput = document.getElementById('password');
+      const togglePasswordBtn = document.getElementById('togglePassword');
+      const toggleIcon = togglePasswordBtn.querySelector('svg');
+
+      // Şifre gösterme/gizleme işlevi
+      togglePasswordBtn.addEventListener('click', () => {
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+
+        // İkonu değiştir
+        if (isPassword) {
+          // Şifreyi göster - kapalı göz ikonu
+          toggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878l4.242 4.242M12 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-1.563 3.029m-5.858-.908a3 3 0 01-4.243-4.243"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
+          `;
+        } else {
+          // Şifreyi gizle - açık göz ikonu
+          toggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          `;
+        }
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        error.classList.add('hidden');
+        
+        // Button loading state
+        const originalBtnContent = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <span class="flex items-center justify-center gap-2">
+            <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Giriş yapılıyor...
+          </span>
+        `;
+        
+        const formData = new FormData(form);
+        const password = formData.get('password');
+        
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          
+          if (!res.ok) throw new Error('login failed');
+          
+          const data = await res.json();
+          localStorage.setItem('token', data.token);
+          
+          // Success animation
+          submitBtn.innerHTML = `
+            <span class="flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              Giriş başarılı!
+            </span>
+          `;
+          
+          setTimeout(() => {
+            window.location.href = '/admin/dashboard.html';
+          }, 1000);
+          
+        } catch (err) {
+          error.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnContent;
+        }
+      });
+    </script>
+  </body>
+  </html>
+

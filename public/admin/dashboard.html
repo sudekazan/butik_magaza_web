@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
+    <script>
+      // Cropper.js yükleme kontrolü - daha hızlı ve güvenilir
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Dashboard HTML yüklendi, Cropper.js kontrol ediliyor...');
+        
+        // Cropper.js'i hemen kontrol et, bekleme süresi kısalt
+        let attempts = 0;
+        const maxAttempts = 50; // 50 × 20ms = 1 saniye max
+        const checkCropper = () => {
+          attempts++;
+          if (typeof Cropper !== 'undefined') {
+            console.log('✅ Cropper.js başarıyla yüklendi');
+            return;
+          }
+          if (attempts < maxAttempts) {
+            setTimeout(checkCropper, 20); // 20ms aralıklarla kontrol et
+          } else {
+            console.error('❌ Cropper.js yüklenemedi! Görsel kırpma özelliği devre dışı.');
+            // Fallback mesajı göster
+            const fallbackMsg = document.createElement('div');
+            fallbackMsg.className = 'fixed top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded z-50';
+            fallbackMsg.innerHTML = 'Görsel kırpma özelliği yüklenemedi. Görseller olduğu gibi kullanılacak.';
+            document.body.appendChild(fallbackMsg);
+            setTimeout(() => fallbackMsg.remove(), 5000);
+          }
+        };
+        checkCropper();
+      });
+    </script>
+    <style>
+      .tab-btn.active {
+        background-color: rgb(241 245 249);
+        color: rgb(15 23 42);
+        font-weight: 600;
+      }
+      
+      /* Modal görünürlük iyileştirmeleri */
+      #prodModal {
+        transition: opacity 0.3s ease-in-out;
+      }
+      
+      #prodModal:not(.hidden) {
+        opacity: 1;
+        visibility: visible;
+        display: flex !important;
+      }
+      
+      #prodModal.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        display: none !important;
+      }
+      
+      /* Modal açıkken arka plan scroll'u engelle - KALDIRILDI */
+      /* body.modal-open {
+        overflow: hidden;
+      } */
+      
+      /* Scroll davranışı iyileştirmeleri */
+      .scroll-smooth {
+        scroll-behavior: smooth;
+      }
+      
+      /* Varyant container scroll davranışı */
+      #variantsContainer::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      #variantsContainer::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      
+      #variantsContainer::-webkit-scrollbar-thumb {
+        background: #cba135;
+        border-radius: 3px;
+      }
+      
+      #variantsContainer::-webkit-scrollbar-thumb:hover {
+        background: #e3c77e;
+      }
+      
+      /* Size stocks container scroll davranışı */
+      #sizeStocksContainer::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      #sizeStocksContainer::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      
+      #sizeStocksContainer::-webkit-scrollbar-thumb {
+        background: #cba135;
+        border-radius: 3px;
+      }
+      
+      #sizeStocksContainer::-webkit-scrollbar-thumb:hover {
+        background: #e3c77e;
+      }
+      
+      /* Mobil responsive stiller */
+      @media (max-width: 1024px) {
+        .mobile-hidden {
+          display: none !important;
+        }
+      }
+      
+      /* Mobil menü animasyonları */
+      .sidebar-transition {
+        transition: transform 0.3s ease-in-out;
+      }
+      
+      /* Mobil kart görünümü için ek stiller */
+      .mobile-card {
+        transition: all 0.2s ease-in-out;
+      }
+      
+      .mobile-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Mobil kart padding ayarları */
+      .pl-19 {
+        padding-left: 4.75rem; /* 76px - checkbox + görsel + gap için */
+      }
+      
+      /* Textarea otomatik yükseklik ayarlaması için */
+      textarea[name="description"] {
+        min-height: 100px;
+        transition: height 0.2s ease;
+        line-height: 1.5;
+        font-family: inherit;
+        resize: none;
+      }
+      
+      textarea[name="description"]:focus {
+        outline: none;
+        border-color: #CBA135;
+        box-shadow: 0 0 0 2px rgba(203, 161, 53, 0.2);
+      }
+      
+      /* Mobil menü sağdan açılma animasyonu */
+      #mobileMenu {
+        transition: opacity 0.3s ease-in-out;
+      }
+      
+      #mobileMenu:not(.hidden) {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      #mobileMenu.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      
+      #mobileMenu > div {
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+      }
+      
+      #mobileMenu:not(.hidden) > div {
+        transform: translateX(0);
+      }
+      
+      /* Mobil kart responsive ayarları */
+      @media (max-width: 640px) {
+        .pl-19 {
+          padding-left: 4rem; /* 64px - daha küçük ekranlar için */
+        }
+      }
+      
+      /* Mobil kart buton stilleri */
+      .mobile-card .prod-edit,
+      .mobile-card .prod-del {
+        min-height: 2.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+        z-index: 10;
+      }
+      
+      .mobile-card .prod-edit:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+      }
+      
+      .mobile-card .prod-del:hover {
+        background-color: #fef2f2;
+        border-color: #fca5a5;
+        transform: translateY(-1px);
+      }
+      
+      /* Mobil kart içerik alanları */
+      .mobile-card .bg-slate-50 {
+        border: 1px solid #e2e8f0;
+      }
+      
+      .mobile-card .bg-slate-100 {
+        border: 1px solid #cbd5e1;
+      }
+      
+      /* Buton alanı için ek boşluk */
+      .mobile-card .border-t {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        background: white;
+        position: relative;
+      }
+      
+      /* Butonların üst üste gelmemesi için */
+      .mobile-card .flex.items-center.gap-2 {
+        position: relative;
+        z-index: 20;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+      }
+      
+      /* Yeni buton alanı stilleri */
+      .mobile-card .bg-slate-50.border-t {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+      }
+      
+      .mobile-card .bg-slate-50.border-t .flex.items-center.gap-2 {
+        background: transparent;
+        padding: 0;
+      }
+      
+      .mobile-card .bg-slate-50.border-t button {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <!-- Mobil Menü Butonu -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+      <button id="mobileMenuToggle" class="p-3 bg-white rounded-lg shadow-lg hover:bg-slate-50 transition-colors">
+        <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Mobil Overlay -->
+    <div id="mobileOverlay" class="lg:hidden fixed inset-0 bg-black/50 z-40 hidden" onclick="closeMobileMenu()"></div>
+    
+    <div class="flex">
+      <!-- Sidebar -->
+      <div id="sidebar" class="fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-white shadow-lg min-h-screen transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-bold text-slate-800">Admin Panel</h1>
+              <p class="text-slate-500 text-sm mt-1">Satın Almasız</p>
+            </div>
+            <!-- Mobil Kapatma Butonu -->
+            <button id="closeSidebar" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors">
+              <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <nav class="px-4">
+          <div class="space-y-2">
+            <button id="tab-categories-btn" class="tab-btn w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition active" data-tab="categories">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                <span>Kategoriler</span>
+              </div>
+            </button>
+            
+            <button id="tab-products-btn" class="tab-btn w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition" data-tab="products">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                <span>Ürünler</span>
+              </div>
+            </button>
+            
+            <button id="tab-campaigns-btn" class="tab-btn w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition" data-tab="campaigns">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>Kampanyalar</span>
+              </div>
+            </button>
+            
+            <button id="tab-featured-btn" class="tab-btn w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition" data-tab="featured">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>Öne Çıkan Ürünler</span>
+              </div>
+            </button>
+            
+            <button id="tab-settings-btn" class="tab-btn w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition" data-tab="settings">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.9,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.9-2.54c0.5-0.24,0.97-0.56,1.39-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                <span>Ayarlar</span>
+              </div>
+            </button>
+          </div>
+        </nav>
+        
+        <div class="mt-auto p-4">
+          <button id="logoutBtn" class="w-full px-4 py-2 text-rose-600 border border-rose-200 rounded-xl hover:bg-rose-50 transition">
+            Çıkış Yap
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 lg:ml-0">
+        <header class="bg-white shadow-sm border-b px-4 lg:px-6 py-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg lg:text-xl font-semibold text-slate-800">Hoş Geldiniz</h2>
+            <div class="flex items-center gap-2 lg:gap-4">
+              <span class="text-sm text-slate-500" id="userInfo">Admin</span>
+            </div>
+          </div>
+        </header>
+
+        <main class="px-2 sm:px-4 lg:px-8 py-4 lg:py-8 space-y-6 lg:space-y-8">
+          <!-- Categories -->
+          <section id="tab-categories" class="block">
+            <div class="grid lg:grid-cols-3 gap-6">
+              <div class="lg:col-span-1 bg-white rounded-2xl shadow p-5">
+                <h2 class="font-semibold text-slate-800 mb-4">Kategori Ekle</h2>
+                <form id="catForm" class="space-y-4">
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Kategori Adı</label>
+                    <input name="name" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Görsel</label>
+                    <div class="space-y-3">
+                      <div id="catDropZone" class="rounded-xl border border-dashed border-slate-300 p-4 text-center hover:border-[#CBA135] transition bg-white">
+                        <input id="catImageInput" name="image" type="file" accept="image/*" class="hidden" />
+                        <p class="text-sm text-slate-500"><button type="button" id="pickCatImageBtn" class="text-[#CBA135] underline">Görsel seçin</button></p>
+                        <img id="catImagePreview" class="mt-3 max-h-32 mx-auto rounded-lg hidden" />
+                      </div>
+                      <div id="catImageControls" class="hidden space-y-2">
+                        <div class="flex items-center gap-2">
+                          <button type="button" id="removeCatImageBtn" class="px-3 py-1.5 text-sm text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50">Görseli Kaldır</button>
+                          <button type="button" id="editCatImageBtn" class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50">Görseli Düzenle</button>
+                        </div>
+                        <div class="text-xs text-slate-500">
+                          <p>Görsel boyutu: <span id="catImageSize">-</span></p>
+                          <p>Görsel boyutları: <span id="catImageDimensions">-</span></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="px-4 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">Ekle</button>
+                </form>
+              </div>
+              <div class="lg:col-span-2 bg-white rounded-2xl shadow p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="font-semibold text-slate-800">Kategoriler</h2>
+                </div>
+                <div id="catList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <!-- Kategoriler buraya yüklenecek -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Products -->
+          <section id="tab-products" class="hidden">
+            <div class="bg-white rounded-2xl shadow p-5 mb-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-4">
+                  <h2 class="font-semibold text-slate-800">Ürünler</h2>
+                  <button id="bulkDeleteBtn" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span id="bulkDeleteCount">0</span> Ürünü Sil
+                  </button>
+                </div>
+                <button id="openProdModal" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-slate-900 shadow hover:shadow-md" style="background: linear-gradient(135deg,#F7E9C3,#E3C77E,#CBA135);">
+                  <span class="text-lg">+</span> Yeni Ürün
+                </button>
+                
+              </div>
+              
+              <!-- Arama ve Filtreleme Bölümü -->
+              <div class="flex flex-col gap-4 mb-4 p-3 lg:p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <!-- Arama Input -->
+                <div class="flex-1">
+                  <div class="relative">
+                    <input 
+                      type="text" 
+                      id="productSearchInput" 
+                      placeholder="Ürün adı, kategori veya açıklamada ara..." 
+                      class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#CBA135] focus:border-[#CBA135] transition-colors"
+                    >
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Filtreler - Mobilde Dikey, Desktop'ta Yatay -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-3">
+                  <select id="categoryFilter" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#CBA135] focus:border-[#CBA135] transition-colors text-sm">
+                    <option value="">Tüm Kategoriler</option>
+                  </select>
+                  
+                  <select id="stockFilter" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#CBA135] focus:border-[#CBA135] transition-colors text-sm">
+                    <option value="">Tüm Stok Durumları</option>
+                    <option value="inStock">Stokta Var</option>
+                    <option value="lowStock">Düşük Stok</option>
+                    <option value="outOfStock">Stokta Yok</option>
+                  </select>
+                  
+                  <button id="clearFiltersBtn" class="w-full sm:col-span-2 lg:w-auto px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors text-sm">
+                    Filtreleri Temizle
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Sonuç Sayısı -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div class="text-sm text-slate-600">
+                  <span id="productResultsCount">0</span> ürün bulundu
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <span class="text-sm text-slate-600">Sırala:</span>
+                  <select id="productSortSelect" class="w-full sm:w-auto px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#CBA135] focus:border-[#CBA135] transition-colors">
+                    <option value="name">Ürün Adı</option>
+                    <option value="price">Fiyat</option>
+                    <option value="stock">Stok</option>
+                    <option value="createdAt">Eklenme Tarihi</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Desktop Tablo Görünümü -->
+              <div class="hidden lg:block overflow-x-auto mt-4">
+                <div class="border border-slate-200 rounded-lg">
+                  <table class="min-w-full text-sm">
+                    <thead class="bg-white shadow-sm">
+                      <tr class="text-left text-slate-600">
+                        <th class="py-3 pr-4 w-12 bg-white border-b border-slate-200">
+                          <input type="checkbox" id="selectAllProducts" class="rounded border-slate-300 text-[#CBA135] focus:ring-[#CBA135]" />
+                        </th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Görsel</th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Ürün <span class="text-xs font-normal text-blue-500">(tıkla → görüntüle)</span></th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Kategori</th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Beden</th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Stok</th>
+                        <th class="py-3 pr-4 bg-white border-b border-slate-200">Fiyat</th>
+                        <th class="py-3 pr-4 text-right bg-white border-b border-slate-200">İşlemler</th>
+                      </tr>
+                    </thead>
+                    <tbody id="prodTableBody" class="divide-y divide-slate-200"></tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Mobil Kart Görünümü -->
+              <div class="lg:hidden mt-4">
+                <div id="prodCardsContainer" class="space-y-4 border border-slate-200 rounded-lg p-4">
+                  <!-- Ürün kartları buraya dinamik olarak eklenecek -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Product Modal -->
+            <div id="prodModal" class="fixed inset-0 bg-black/40 hidden p-2 md:p-4 z-[9999] overflow-y-auto">
+              <div class="w-full max-w-4xl bg-white rounded-2xl shadow-lg mx-auto my-4 md:my-8 max-h-[95vh] flex flex-col">
+                <div class="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
+                  <h3 class="text-lg font-semibold">Ürün Ekle</h3>
+                  <button id="closeProdModal" class="p-2 rounded-lg hover:bg-slate-100" aria-label="Kapat">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                  <form id="prodForm" class="grid lg:grid-cols-2 gap-4 md:gap-6">
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Kategori</label>
+                    <select name="categoryId" id="prodCat" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2"></select>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Ürün Adı</label>
+                    <input name="name" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-700 mb-1">Açıklama</label>
+                    <textarea name="description" rows="4" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 resize-none" placeholder="Ürün açıklamasını detaylı olarak yazın..."></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Ana Fiyat (₺)</label>
+                    <input name="price" type="number" step="0.01" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                  </div>
+                  
+                  <!-- Ana Ürün Rengi -->
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-700 mb-2">Ana Ürün Rengi</label>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Renk Adı:</label>
+                        <input name="mainColor" placeholder="Örn: Siyah, Beyaz, Doğal" class="rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <label class="text-sm text-slate-600">Renk Kodu:</label>
+                        <input name="mainColorHex" type="color" value="#000000" class="w-12 h-10 rounded-lg border-slate-200 focus:ring-2 focus:ring-[#CBA135]" />
+                      </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Ana ürünün temel renk bilgisi. Farklı renkler için varyant ekleyebilirsiniz.</p>
+                  </div>
+                  
+
+                  
+                  <!-- Beden Bazlı Stok -->
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-700 mb-2">Beden Bazlı Stok</label>
+                    <div id="sizeStocksContainer" class="space-y-2">
+                      <!-- Beden satırları buraya dinamik olarak eklenecek -->
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                      <button type="button" id="addSizeRowBtn" class="px-3 py-1.5 text-sm text-[#CBA135] border border-[#CBA135] rounded-lg hover:bg-[#CBA135] hover:text-white transition-colors">
+                        + Beden Ekle
+                      </button>
+                      
+                      <!-- Varsayılan Bedenler -->
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-600">Hızlı ekle:</span>
+                        <div class="flex gap-1">
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="XS">XS</button>
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="S">S</button>
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="M">M</button>
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="L">L</button>
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="XL">XL</button>
+                          <button type="button" class="quick-size-btn px-2 py-1 text-xs bg-slate-100 hover:bg-[#CBA135] hover:text-white rounded border transition-colors" data-size="XXL">XXL</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Ürün Görselleri Bölümü -->
+                  <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-700 mb-2">Ürün Görselleri</label>
+                    <div class="space-y-3">
+                      <div id="dropZone" class="rounded-xl border border-dashed border-slate-300 p-4 text-center hover:border-[#CBA135] transition bg-white">
+                        <input id="prodImageInput" name="image" type="file" accept="image/*" multiple class="hidden" />
+                        <p class="text-sm text-slate-500"><button type="button" id="pickImageBtn" class="text-[#CBA135] underline">Görsel seçin</button> veya sürükleyip bırakın</p>
+                        <p class="text-xs text-slate-400 mt-1">Birden fazla görsel seçebilirsiniz</p>
+                      </div>
+                      
+                      <!-- Çoklu görsel container'ı -->
+                      <div id="productImagesContainer" class="space-y-2">
+                        <!-- Görseller buraya dinamik olarak eklenecek -->
+                      </div>
+                      
+                      <!-- Görsel kontrolleri -->
+                      <div id="imageControls" class="hidden space-y-2">
+                        <div class="text-xs text-slate-500">
+                          <p>Eklenen görsel sayısı: <strong>0</strong></p>
+                          <p>Ana görsel: <strong>Belirlenmedi</strong></p>
+                          <p>Önerilen boyut: 1200x1000px (6:5 oran)</p>
+                          <p>İlk eklenen görsel ana görsel olarak kullanılır</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Renk Varyantları Bölümü -->
+                  <div class="lg:col-span-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <label class="block text-lg font-semibold text-slate-700">Renk Varyantları</label>
+                      <button type="button" id="addVariantBtn" class="px-4 py-2 rounded-xl text-white shadow hover:shadow-md transform hover:scale-105 active:scale-95 transition-all duration-200 text-sm sm:text-base" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">
+                        <span class="flex items-center gap-2">
+                          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                          </svg>
+                          Varyant Ekle
+                        </span>
+                      </button>
+                    </div>
+                    
+                    <!-- Yeni Gelişmiş Varyant Sistemi -->
+                    <div id="variantsContainer" class="space-y-4 hidden">
+                      <!-- Varyant kartları buraya dinamik olarak eklenecek -->
+                    </div>
+                    
+                    <!-- Eski renk varyantları sistemi - kaldırıldı -->
+                    <div id="colorVariantsContainer" class="hidden">
+                      <!-- Eski sistem gizlendi -->
+                    </div>
+                  
+                  </div>
+
+
+
+                  
+                  <div class="md:col-span-2 flex items-center justify-end gap-2 mt-6">
+                    <button type="button" class="px-4 py-2 rounded-xl border close-modal-btn">Vazgeç</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">Ürünü Kaydet</button>
+                  </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Campaigns -->
+          <section id="tab-campaigns" class="hidden">
+            <div class="grid lg:grid-cols-3 gap-6">
+              <!-- Kampanya Ekleme Formu -->
+              <div class="lg:col-span-1 bg-white rounded-2xl shadow p-5">
+                <h2 class="font-semibold text-slate-800 mb-4">Kampanya Ekle</h2>
+                <form id="campaignForm" class="space-y-4">
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Kampanya Adı</label>
+                    <input name="name" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="Örn: Yaz Sezonu İndirimi" />
+                  </div>
+                  
+                  
+                  
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-sm text-slate-700 mb-1">Başlangıç</label>
+                      <input name="startDate" type="datetime-local" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                    </div>
+                    <div>
+                      <label class="block text-sm text-slate-700 mb-1">Bitiş</label>
+                      <input name="endDate" type="datetime-local" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Kampanya Tipi</label>
+                    <select name="type" id="campaignType" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2">
+                      <option value="">Seçiniz</option>
+                      <option value="category">Kategori Bazlı</option>
+                      <option value="products">Ürün Bazlı</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Kategori Seçimi (Kategori kampanyası için) -->
+                  <div id="categorySelection" class="hidden">
+                    <label class="block text-sm text-slate-700 mb-1">Kategori</label>
+                    <select name="targetId" id="campaignCategory" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2">
+                      <option value="">Kategori seçiniz</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Ürün Seçimi (Ürün kampanyası için) -->
+                  <div id="productSelection" class="hidden">
+                    <label class="block text-sm text-slate-700 mb-1">Ürünler</label>
+                    <div class="max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-3">
+                      <div id="campaignProductsList" class="space-y-2">
+                        <!-- Ürünler buraya yüklenecek -->
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">İndirim Oranı (%)</label>
+                    <input name="discount" type="number" min="0" max="100" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="0" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Öncelik</label>
+                    <input name="priority" type="number" min="1" max="10" value="1" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                  </div>
+                  
+                  
+                  
+                  <button type="submit" class="w-full px-4 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">
+                    Kampanya Ekle
+                  </button>
+                </form>
+              </div>
+              
+              <!-- Kampanya Listesi -->
+              <div class="lg:col-span-2 bg-white rounded-2xl shadow p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="font-semibold text-slate-800">Kampanyalar</h2>
+                </div>
+                <div id="campaignList" class="space-y-4">
+                  <!-- Kampanyalar buraya yüklenecek -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Featured Products -->
+          <section id="tab-featured" class="hidden">
+            <div class="grid lg:grid-cols-3 gap-6">
+              <div class="lg:col-span-1 bg-white rounded-2xl shadow p-5">
+                <h2 class="font-semibold text-slate-800 mb-4">Öne Çıkan Ürün Ekle</h2>
+                
+
+                
+                <form id="featuredForm" class="space-y-4">
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Ürün Seç</label>
+                    <select id="featuredProductSelect" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2">
+                      <option value="">Ürün seçin...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Öncelik</label>
+                    <input type="number" id="featuredPriority" min="1" value="1" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                    <p class="text-xs text-slate-500 mt-1">Düşük sayı = Yüksek öncelik</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Bitiş Tarihi (Opsiyonel)</label>
+                    <input type="datetime-local" id="featuredEndDate" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-slate-700 mb-1">Notlar</label>
+                    <textarea id="featuredNotes" rows="2" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2" placeholder="Öne çıkarma hakkında notlar..."></textarea>
+                  </div>
+                  <button type="submit" class="px-4 py-2 rounded-xl text-white shadow hover:shadow-md" style="background: linear-gradient(135deg,#CBA135,#E3C77E);">Öne Çıkar</button>
+                </form>
+              </div>
+              <div class="lg:col-span-2 bg-white rounded-2xl shadow p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="font-semibold text-slate-800">Öne Çıkan Ürünler</h2>
+                  <div class="flex items-center gap-2">
+                    <button id="reorderFeaturedBtn" class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50">Sıralamayı Kaydet</button>
+                  </div>
+                </div>
+                <div id="featuredList" class="space-y-3">
+                  <!-- Öne çıkan ürünler buraya yüklenecek -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Settings -->
+          <section id="tab-settings" class="hidden">
+            <div class="grid lg:grid-cols-2 gap-6">
+              
+              <!-- Güvenlik Ayarları -->
+              <div class="bg-white rounded-2xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-[#CBA135]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+                    </svg>
+                    Güvenlik Ayarları
+                  </h3>
+                  <button id="checkPasswordStatusBtn" class="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+                    Şifre Durumunu Kontrol Et
+                  </button>
+                </div>
+                <form id="changePasswordForm" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mevcut Şifre</label>
+                    <div class="relative">
+                      <input type="password" id="currentPassword" required class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="Mevcut şifrenizi giriniz" />
+                      <button type="button" id="toggleCurrentPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre</label>
+                    <div class="relative">
+                      <input type="password" id="newPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="En az 6 karakter" />
+                      <button type="button" id="toggleNewPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre (Tekrar)</label>
+                    <div class="relative">
+                      <input type="password" id="confirmPassword" required minlength="6" class="w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-[#CBA135] px-3 py-2 pr-12" placeholder="Yeni şifreyi tekrar giriniz" />
+                      <button type="button" id="toggleConfirmPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[#CBA135] transition-colors duration-200">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Şifre Gücü İndikatörü -->
+                  <div id="passwordStrength" class="hidden">
+                    <div class="text-xs text-slate-600 mb-1">Şifre Gücü:</div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                      <div id="strengthBar" class="h-2 rounded-full transition-all duration-300"></div>
+                    </div>
+                    <div id="strengthText" class="text-xs mt-1"></div>
+                  </div>
+                  
+                  <button type="submit" id="changePasswordBtn" class="w-full bg-[#CBA135] text-white px-4 py-2 rounded-xl hover:bg-[#a87c00] transition">
+                    Şifreyi Değiştir
+                  </button>
+                </form>
+                
+                <!-- Success/Error Messages -->
+                <div id="passwordChangeSuccess" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm hidden">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Şifre başarıyla değiştirildi!</span>
+                  </div>
+                </div>
+                
+                <div id="passwordChangeError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm hidden">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.334 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span id="passwordErrorText">Şifre değiştirme başarısız!</span>
+                  </div>
+                </div>
+                
+                <!-- Şifre Durumu Mesajı -->
+                <div id="passwordStatusMessage" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm hidden">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="passwordStatusText">Şifre durumu kontrol ediliyor...</span>
+                  </div>
+                </div>
+              </div>
+
+              
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="/js/dialog.js"></script>
+    <script src="/admin/admin.js"></script>
+  </body>
+</html> 
